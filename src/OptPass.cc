@@ -30,16 +30,19 @@
  * SUCH DAMAGE.
  */
 
+#include "IFFactory.hh"
+
 #include "loom/Instrumenter.hh"
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/InstIterator.h"
-#include "llvm/Support/raw_ostream.h"
+#include <llvm/Pass.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/InstIterator.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <sstream>
 
 using namespace llvm;
+using namespace llvm::prov;
 using namespace loom;
 using std::string;
 using std::unique_ptr;
@@ -55,6 +58,14 @@ namespace {
 }
 
 
+/**
+ * Collect the transitive closure of @ref V's `User`s.
+ *
+ * @param[in]   V        the @ref Value to collect `User`s of
+ * @param[out]  Users    the set to store the `User`s in
+ */
+static void CollectUsers(const Value *V, SmallPtrSetImpl<const User*>& Users);
+
 static string JoinVec(const std::vector<string>&);
 
 
@@ -65,19 +76,43 @@ bool OptPass::runOnModule(Module &Mod)
   unique_ptr<Instrumenter> Instr(
     Instrumenter::Create(Mod, JoinVec, std::move(S)));
 
-  bool ModifiedIR = false;
+  unique_ptr<IFFactory> IF = IFFactory::FreeBSDMetaIO(Mod);
+  SmallVector<CallInst*, 8> Sources;
 
   for (auto& Fn : Mod) {
     for (auto& Inst : instructions(Fn)) {
       if (CallInst* Call = dyn_cast<CallInst>(&Inst)) {
-        Function *Target = Call->getCalledFunction();
-        if (not Target)
-          continue; // TODO: support indirect targets
+        if (IF->IsSource(Call)) {
+          Sources.push_back(Call);
+        }
       }
     }
   }
 
+  bool ModifiedIR = false;
+  for (CallInst *Call : Sources) {
+    unique_ptr<Source> Source = IF->TranslateSource(Call);
+    assert(Source && "IFFactory didn't translate the IF source");
+
+    for (const Value *V : Source->Outputs()) {
+      SmallPtrSet<const User*, 4> Users;
+      CollectUsers(V, Users);
+    }
+
+    ModifiedIR = true;
+  }
+
   return ModifiedIR;
+}
+
+static void CollectUsers(const Value *V, SmallPtrSetImpl<const User*>& Users) {
+  for (const Use& U : V->uses()) {
+    const User *U2 = U.getUser();
+    if (Users.count(U2) == 0) {
+      Users.insert(U2);
+      CollectUsers(U2, Users);
+    }
+  }
 }
 
 static string JoinVec(const std::vector<string>& V) {

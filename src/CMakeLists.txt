@@ -1,4 +1,5 @@
 add_llvm_loadable_module(LLVMProv
+	IFFactory-FreeBSD.cc
 	OptPass.cc
 
 	# Link explicitly against the library's full path, as CMake's normal
