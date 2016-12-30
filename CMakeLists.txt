@@ -3,7 +3,10 @@ cmake_minimum_required(VERSION 3.3)
 project(LLVMProv)
 
 find_package(LLVM REQUIRED CONFIG)
-list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
+list(APPEND CMAKE_MODULE_PATH
+	"${LLVM_CMAKE_DIR}"
+	"${CMAKE_SOURCE_DIR}/cmake/Modules"
+)
 
 # Based on http://stackoverflow.com/questions/27863706:
 #
@@ -17,12 +20,13 @@ include(AddLLVM)
 
 add_definitions(${LLVM_DEFINITIONS})
 include_directories(${LLVM_INCLUDE_DIRS})
-include_directories(${LOOM_PREFIX}/include)
 link_directories(${LLVM_LIBRARY_DIRS})
-link_directories(${LOOM_PREFIX}/lib)
 
 # Where to find LLVM binaries (e.g., llvm-lit).
 set(LLVM_BINARY_DIR ${LLVM_DIR}/../../../bin)
+
+find_package(Loom REQUIRED)
+include_directories(${LOOM_INCLUDE_DIRS})
 
 # Always use C++11.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
