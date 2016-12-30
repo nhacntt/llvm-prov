@@ -36,28 +36,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)utils.c	8.3 (Berkeley) 4/1/94";
-#endif
-#endif /* not lint */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
-#include <sys/types.h>
-#include <sys/acl.h>
-#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#include <err.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <fts.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sysexits.h>
 #include <unistd.h>
 
 int
@@ -85,13 +67,6 @@ copy_file(/*const FTSENT *entp, int dne*/)
 	rval = 0;
 
 	/* if (!lflag && !sflag) */ {
-		/*
-		 * Mmap and write if less than 8M (the limit is so we don't
-		 * totally trash memory on big files.  This is really a minor
-		 * hack, but it wins some CPU back.
-		 * Some filesystems, such as smbnetfs, don't support mmap,
-		 * so this is a best-effort attempt.
-		 */
 		// LLCHECK: call i8* @mmap
 		// PROVCHECK: call i8* @metaio_mmap
 		if (S_ISREG(fs->st_mode) && fs->st_size > 0 &&
