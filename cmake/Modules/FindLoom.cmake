@@ -46,9 +46,5 @@ find_package_handle_standard_args(Loom
 
 mark_as_advanced(LOOM_INCLUDE_DIR LOOM_LIBRARY)
 
-#if(NOT LOOM_INCLUDE_DIR OR NOT LOOM_LIBRARY)
-#	message(FATAL_ERROR "can't find Loom: try setting LOOM_PREFIX?")
-#endif()
-
 set(LOOM_LIBRARIES ${LOOM_LIBRARY})
 set(LOOM_INCLUDE_DIRS ${LOOM_INCLUDE_DIR})
