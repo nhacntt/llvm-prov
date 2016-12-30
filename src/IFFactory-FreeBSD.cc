@@ -185,7 +185,7 @@ std::unique_ptr<Source> MetaIO::TranslateSource(CallInst *Call) {
 
 
 StructType* MetaIO::MetadataType() {
-  if (StructType *T = Mod.getTypeByName("metaio")) {
+  if (StructType *T = Mod.getTypeByName("struct.metaio")) {
     return T;
   }
 
@@ -201,11 +201,11 @@ StructType* MetaIO::MetadataType() {
     UUIDType(), // mio_uuid
   };
 
-  return StructType::create(FieldTypes, "metaio");
+  return StructType::create(FieldTypes, "struct.metaio");
 }
 
 StructType* MetaIO::UUIDType() {
-  if (StructType *T = Mod.getTypeByName("uuid")) {
+  if (StructType *T = Mod.getTypeByName("struct.uuid")) {
     return T;
   }
 
@@ -222,5 +222,5 @@ StructType* MetaIO::UUIDType() {
     nodeTy,     // node[_UUID_NODE_LEN]
   };
 
-  return StructType::create(FieldTypes, "uuid");
+  return StructType::create(FieldTypes, "struct.uuid");
 }

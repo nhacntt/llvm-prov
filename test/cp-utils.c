@@ -68,7 +68,8 @@ copy_file(/*const FTSENT *entp, int dne*/)
 
 	/* if (!lflag && !sflag) */ {
 		// LLCHECK: call i8* @mmap
-		// PROVCHECK: call i8* @metaio_mmap
+		// PROVCHECK: [[METAIO:%[a-z0-9]+]] = alloca %struct.metaio
+		// PROVCHECK: call i8* @metaio_mmap({{.*}}[[METAIO]]
 		if (S_ISREG(fs->st_mode) && fs->st_size > 0 &&
 		    fs->st_size <= 8 * 1024 * 1024 &&
 		    (p = mmap(NULL, (size_t)fs->st_size, PROT_READ,
