@@ -34,7 +34,7 @@ find_path(LOOM_INCLUDE_DIR
 )
 
 find_library(LOOM_LIBRARY
-	NAMES LLVMLoom
+  NAMES LLVMLoom LLVMLoom.so LLVMLoom.dylib
 	PATHS ${LOOM_PREFIX}/lib /usr/local/lib /usr/lib
 )
 
