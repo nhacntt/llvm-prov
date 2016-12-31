@@ -64,7 +64,7 @@ namespace {
  * @param[in]   V        the @ref Value to collect `User`s of
  * @param[out]  Users    the set to store the `User`s in
  */
-static void CollectUsers(const Value *V, SmallPtrSetImpl<const User*>& Users);
+static void CollectUsers(const Value *V, SmallPtrSetImpl<User*>& Users);
 
 static string JoinVec(const std::vector<string>&);
 
@@ -94,8 +94,16 @@ bool OptPass::runOnModule(Module &Mod)
     Source Source = IF->TranslateSource(Call);
 
     for (const Value *V : Source.Outputs()) {
-      SmallPtrSet<const User*, 4> Users;
+      SmallPtrSet<User*, 4> Users;
       CollectUsers(V, Users);
+
+      for (User *U : Users) {
+        if (CallInst *C = dyn_cast<CallInst>(U)) {
+          if (IF->CanSink(C)) {
+            IF->TranslateSink(C, Source);
+          }
+        }
+      }
     }
 
     ModifiedIR = true;
@@ -104,9 +112,14 @@ bool OptPass::runOnModule(Module &Mod)
   return ModifiedIR;
 }
 
-static void CollectUsers(const Value *V, SmallPtrSetImpl<const User*>& Users) {
+static void CollectUsers(const Value *V, SmallPtrSetImpl<User*>& Users) {
+  if (const StoreInst *Store = dyn_cast<StoreInst>(V)) {
+    V = Store->getPointerOperand();
+  }
+
   for (const Use& U : V->uses()) {
-    const User *U2 = U.getUser();
+    User *U2 = U.getUser();
+
     if (Users.count(U2) == 0) {
       Users.insert(U2);
       CollectUsers(U2, Users);

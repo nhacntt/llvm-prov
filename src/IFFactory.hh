@@ -71,6 +71,14 @@ class IFFactory
    * platform-specific techniques.
    */
   virtual Source TranslateSource(CallInst*) = 0;
+
+  /**
+   * Add tracing to an information flow sink.
+   *
+   * After statically following information flows from a source to a sink,
+   * add code to link the two by, e.g., propagating tags or other metadata.
+   */
+  virtual bool TranslateSink(CallInst*, const Source&) = 0;
 };
 
 } // namespace prov

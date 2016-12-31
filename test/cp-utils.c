@@ -77,6 +77,7 @@ copy_file(/*const FTSENT *entp, int dne*/)
 			wtotal = 0;
 			for (bufp = p, wresid = fs->st_size; ;
 			    bufp += wcount, wresid -= (size_t)wcount) {
+				// PROVCHECK: call i{{[0-9]+}} @metaio_write({{.*}}[[METAIO]]
 				wcount = write(to_fd, bufp, wresid);
 				if (wcount <= 0)
 					break;

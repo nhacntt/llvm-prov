@@ -55,6 +55,7 @@ public:
   bool CanSink(CallInst*) override;
 
   Source TranslateSource(CallInst*) override;
+  bool TranslateSink(CallInst*, const Source&) override;
 
 private:
   //! Find or construct the `struct metaio` type.
@@ -181,6 +182,38 @@ Source MetaIO::TranslateSource(CallInst *Call) {
   }
 
   return Source(OutputValues, MetaIOPtr);
+}
+
+
+bool MetaIO::TranslateSink(CallInst *Call, const Source &S) {
+  Value *MetaIOPtr = S.Metadata();
+  assert(MetaIOPtr->getType() == PointerType::getUnqual(MetadataType()));
+
+  // Identify the function being called
+  Function *F = Call->getCalledFunction();
+  assert(F and F->hasName());
+  StringRef Name = F->getName();
+
+  // TODO: handle flow combinations, i.e., multiple sources to one sink
+  assert(Name.find("metaio") == StringRef::npos && "multi-source sink");
+
+  FunctionType *FT = F->getFunctionType();
+  assert(not FT->isVarArg()); // TODO(JA): do we need/use varargs?
+
+  // Construct the metaio variant of the system call
+  std::vector<Type*> ParamTypes = FT->params();
+  SmallVector<Value*, 4> Arguments(Call->arg_begin(), Call->arg_end());
+  Arguments.push_back(MetaIOPtr);
+  ParamTypes.push_back(MetaIOPtr->getType());
+
+  Constant *MetaFn = Mod.getOrInsertFunction(("metaio_" + Name).str(),
+    FunctionType::get(FT->getReturnType(), ParamTypes, false));
+
+  // Create a call to the metaio system call to replace the original call
+  CallInst *MetaCall = CallInst::Create(MetaFn, Arguments);
+  ReplaceInstWithInst(Call, MetaCall);
+
+  return false;
 }
 
 
