@@ -91,10 +91,9 @@ bool OptPass::runOnModule(Module &Mod)
 
   bool ModifiedIR = false;
   for (CallInst *Call : Sources) {
-    unique_ptr<Source> Source = IF->TranslateSource(Call);
-    assert(Source && "IFFactory didn't translate the IF source");
+    Source Source = IF->TranslateSource(Call);
 
-    for (const Value *V : Source->Outputs()) {
+    for (const Value *V : Source.Outputs()) {
       SmallPtrSet<const User*, 4> Users;
       CollectUsers(V, Users);
     }

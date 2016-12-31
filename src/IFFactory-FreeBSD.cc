@@ -54,7 +54,7 @@ public:
   bool IsSource(CallInst*) override;
   bool CanSink(CallInst*) override;
 
-  std::unique_ptr<Source> TranslateSource(CallInst*) override;
+  Source TranslateSource(CallInst*) override;
 
 private:
   //! Find or construct the `struct metaio` type.
@@ -119,7 +119,7 @@ bool MetaIO::CanSink(CallInst *Call) {
   return (SinkNames.find(Name) != SinkNames.end());
 }
 
-std::unique_ptr<Source> MetaIO::TranslateSource(CallInst *Call) {
+Source MetaIO::TranslateSource(CallInst *Call) {
   // Identify the function being called
   Function *F = Call->getCalledFunction();
   assert(F and F->hasName());
@@ -180,7 +180,7 @@ std::unique_ptr<Source> MetaIO::TranslateSource(CallInst *Call) {
     assert(false && "unhandled source function");
   }
 
-  return MakeSource(OutputValues, MetaIOPtr);
+  return Source(OutputValues, MetaIOPtr);
 }
 
 

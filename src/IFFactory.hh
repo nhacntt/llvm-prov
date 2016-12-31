@@ -70,12 +70,7 @@ class IFFactory
    * the number of bytes returned and extracting metadata with
    * platform-specific techniques.
    */
-  virtual std::unique_ptr<Source> TranslateSource(CallInst*) = 0;
-
-protected:
-  std::unique_ptr<Source> MakeSource(ArrayRef<const Value*> Out, Value *V) {
-    return std::unique_ptr<Source>(new Source(Out, V));
-  }
+  virtual Source TranslateSource(CallInst*) = 0;
 };
 
 } // namespace prov

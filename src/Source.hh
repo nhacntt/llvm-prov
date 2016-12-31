@@ -57,6 +57,19 @@ class Source
 {
   public:
   /**
+   * Constructor.
+   *
+   * @param   Outputs    the values that are "output" by this source, whether
+   *                     or not they are syntactic outputs (e.g., return values)
+   * @param   Metadata   metadata associated with this source, such as a
+   *                     tag or a pointer to richer metadata
+   */
+  Source(ArrayRef<const Value*> Outputs, Value *Metadata)
+    : OutputValues(Outputs), MetadataValue(Metadata)
+  {
+  }
+
+  /**
    * The values that are output from this source.
    *
    * Determining the values that are output from a source requires some
@@ -78,15 +91,8 @@ class Source
   Value* Metadata() const { return MetadataValue; }
 
 private:
-  Source(ArrayRef<const Value*> Outputs, Value *MetadataValue)
-    : OutputValues(Outputs), MetadataValue(MetadataValue)
-  {
-  }
-
   TinyPtrVector<const Value*> OutputValues;
   Value *MetadataValue;
-
-  friend class IFFactory;
 };
 
 } // namespace prov
