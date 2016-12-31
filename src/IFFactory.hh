@@ -35,6 +35,8 @@
 
 #include "Source.hh"
 
+#include <loom/Instrumenter.hh>
+
 #include <memory>
 
 
@@ -53,8 +55,10 @@ namespace prov {
 class IFFactory
 {
   public:
+  typedef std::unique_ptr<loom::Instrumenter> InstrPtr;
+
   //! Create a new FreeBSD-specific @ref IFFactory using metaio.
-  static std::unique_ptr<IFFactory> FreeBSDMetaIO(Module&);
+  static std::unique_ptr<IFFactory> FreeBSDMetaIO(InstrPtr);
 
   //! Is this function call a source of information to track?
   virtual bool IsSource(CallInst*) = 0;

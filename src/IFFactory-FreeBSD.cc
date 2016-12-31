@@ -39,7 +39,6 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-#include <llvm/Transforms/Utils/BasicBlockUtils.h>
 
 using namespace llvm;
 using namespace llvm::prov;
@@ -49,7 +48,7 @@ namespace {
 
 class MetaIO : public IFFactory {
 public:
-  MetaIO(Module&);
+  MetaIO(InstrPtr);
 
   bool IsSource(CallInst*) override;
   bool CanSink(CallInst*) override;
@@ -64,6 +63,7 @@ private:
   //! Find or construct the `struct uuid` type.
   StructType* UUIDType();
 
+  InstrPtr Instr;
   Module& Mod;
   LLVMContext& Ctx;
   IntegerType *i32, *i64;
@@ -72,13 +72,13 @@ private:
 } // anonymous namespace
 
 
-std::unique_ptr<IFFactory> IFFactory::FreeBSDMetaIO(Module& Mod) {
-  return std::unique_ptr<IFFactory>(new MetaIO(Mod));
+std::unique_ptr<IFFactory> IFFactory::FreeBSDMetaIO(InstrPtr Instr) {
+  return std::unique_ptr<IFFactory>(new MetaIO(std::move(Instr)));
 }
 
 
-MetaIO::MetaIO(Module& Mod)
-  : Mod(Mod), Ctx(Mod.getContext()),
+MetaIO::MetaIO(InstrPtr I)
+  : Instr(std::move(I)), Mod(this->Instr->getModule()), Ctx(Mod.getContext()),
     i32(IntegerType::get(Ctx, 32)), i64(IntegerType::get(Ctx, 32))
 {
 }
@@ -126,34 +126,22 @@ Source MetaIO::TranslateSource(CallInst *Call) {
   assert(F and F->hasName());
   StringRef Name = F->getName();
 
-  FunctionType *FT = F->getFunctionType();
-  assert(not FT->isVarArg()); // TODO(JA): do we need/use varargs?
-
   // Allocate a `struct metaio` on the stack
   Value *MetaIOPtr =
     IRBuilder<>(Call).CreateAlloca(MetadataType(), nullptr, "metaio");
 
-  // Construct the metaio variant of the system call
-  std::vector<Type*> ParamTypes = FT->params();
-  SmallVector<Value*, 4> Arguments(Call->arg_begin(), Call->arg_end());
-  Arguments.push_back(MetaIOPtr);
-  ParamTypes.push_back(MetaIOPtr->getType());
+  Call = Instr->Extend(Call, ("metaio_" + Name).str(), { MetaIOPtr },
+                       loom::Instrumenter::ParamPosition::End);
 
-  Constant *MetaFn = Mod.getOrInsertFunction(("metaio_" + Name).str(),
-    FunctionType::get(FT->getReturnType(), ParamTypes, false));
-
-  // Create a call to the metaio system call to replace the original call
-  CallInst *MetaCall = CallInst::Create(MetaFn, Arguments);
-  ReplaceInstWithInst(Call, MetaCall);
-
-  // Finally, determine which value(s) constitute outputs from this IF source.
+  // Determine which value(s) constitute outputs from this IF source.
+  //
   // We have to do this after replacing the original CallInst, since the return
   // value might be the output value in question (so we need the replaced call).
   SmallVector<const Value*, 4> OutputValues;
 
   if (Name == "mmap") {
     // The "output" of mmap(2) is the memory being mapped (the return value):
-    OutputValues.push_back(MetaCall);
+    OutputValues.push_back(Call);
 
   } else if (Name.find("read") != StringRef::npos) {
     //
@@ -197,21 +185,8 @@ bool MetaIO::TranslateSink(CallInst *Call, const Source &S) {
   // TODO: handle flow combinations, i.e., multiple sources to one sink
   assert(Name.find("metaio") == StringRef::npos && "multi-source sink");
 
-  FunctionType *FT = F->getFunctionType();
-  assert(not FT->isVarArg()); // TODO(JA): do we need/use varargs?
-
-  // Construct the metaio variant of the system call
-  std::vector<Type*> ParamTypes = FT->params();
-  SmallVector<Value*, 4> Arguments(Call->arg_begin(), Call->arg_end());
-  Arguments.push_back(MetaIOPtr);
-  ParamTypes.push_back(MetaIOPtr->getType());
-
-  Constant *MetaFn = Mod.getOrInsertFunction(("metaio_" + Name).str(),
-    FunctionType::get(FT->getReturnType(), ParamTypes, false));
-
-  // Create a call to the metaio system call to replace the original call
-  CallInst *MetaCall = CallInst::Create(MetaFn, Arguments);
-  ReplaceInstWithInst(Call, MetaCall);
+  Instr->Extend(Call, ("metaio_" + Name).str(), { MetaIOPtr },
+                loom::Instrumenter::ParamPosition::End);
 
   return false;
 }

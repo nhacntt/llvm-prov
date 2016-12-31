@@ -73,10 +73,9 @@ bool OptPass::runOnModule(Module &Mod)
 {
   auto S = InstrStrategy::Create(loom::InstrStrategy::Kind::Inline, false);
 
-  unique_ptr<Instrumenter> Instr(
+  auto IF = IFFactory::FreeBSDMetaIO(
     Instrumenter::Create(Mod, JoinVec, std::move(S)));
 
-  unique_ptr<IFFactory> IF = IFFactory::FreeBSDMetaIO(Mod);
   SmallVector<CallInst*, 8> Sources;
 
   for (auto& Fn : Mod) {
