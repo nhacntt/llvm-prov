@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
+#include <err.h>
 #include <fcntl.h>
 #include <unistd.h>
 
