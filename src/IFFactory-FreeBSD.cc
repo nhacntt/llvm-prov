@@ -122,9 +122,9 @@ bool MetaIO::CanSink(CallInst *Call) {
 
 Source MetaIO::TranslateSource(CallInst *Call) {
   // Identify the function being called
-  Function *F = Call->getCalledFunction();
-  assert(F and F->hasName());
-  StringRef Name = F->getName();
+  Function *Target = Call->getCalledFunction();
+  assert(Target and Target->hasName());
+  StringRef Name = Target->getName();
 
   // Allocate a `struct metaio` on the stack
   Value *MetaIOPtr =
