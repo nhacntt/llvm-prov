@@ -127,8 +127,11 @@ Source MetaIO::TranslateSource(CallInst *Call) {
   StringRef Name = Target->getName();
 
   // Allocate a `struct metaio` on the stack
+  Function *F = Call->getParent()->getParent();
+  BasicBlock &EntryBlock = F->front();
+  Instruction &First = EntryBlock.front();
   Value *MetaIOPtr =
-    IRBuilder<>(Call).CreateAlloca(MetadataType(), nullptr, "metaio");
+    IRBuilder<>(&First).CreateAlloca(MetadataType(), nullptr, "metaio");
 
   Call = Instr->Extend(Call, ("metaio_" + Name).str(), { MetaIOPtr },
                        loom::Instrumenter::ParamPosition::End);
