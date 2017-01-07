@@ -61,10 +61,10 @@ class IFFactory
   static std::unique_ptr<IFFactory> FreeBSDMetaIO(InstrPtr);
 
   //! Is this function call a source of information to track?
-  virtual bool IsSource(CallInst*) = 0;
+  virtual bool IsSource(CallInst*) const = 0;
 
   //! Can this function call be a sink for tracked information?
-  virtual bool CanSink(CallInst*) = 0;
+  virtual bool CanSink(CallInst*) const = 0;
 
   /**
    * Create a @ref Source for information coming out of this @ref CallInst.

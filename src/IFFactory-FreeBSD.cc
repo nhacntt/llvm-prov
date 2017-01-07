@@ -50,8 +50,8 @@ class MetaIO : public IFFactory {
 public:
   MetaIO(InstrPtr);
 
-  bool IsSource(CallInst*) override;
-  bool CanSink(CallInst*) override;
+  bool IsSource(CallInst*) const override;
+  bool CanSink(CallInst*) const override;
 
   Source TranslateSource(CallInst*) override;
   bool TranslateSink(CallInst*, const Source&) override;
@@ -84,7 +84,7 @@ MetaIO::MetaIO(InstrPtr I)
 }
 
 
-bool MetaIO::IsSource(CallInst *Call) {
+bool MetaIO::IsSource(CallInst *Call) const {
   Function *F = Call->getCalledFunction();
   if (not (F and F->hasName())) {
     return false;
@@ -102,7 +102,7 @@ bool MetaIO::IsSource(CallInst *Call) {
   return (SourceNames.find(Name) != SourceNames.end());
 }
 
-bool MetaIO::CanSink(CallInst *Call) {
+bool MetaIO::CanSink(CallInst *Call) const {
   Function *F = Call->getCalledFunction();
   if (not (F and F->hasName())) {
     return false;
