@@ -37,7 +37,6 @@ Then set some more useful environment variables:
 
 ```sh
 $ export PATH=/path/to/loom/source/scripts:$PATH
-$ export LOOM_PREFIX=/path/to/loom/build/Release
 ```
 
 
@@ -51,7 +50,10 @@ $ git clone https://github.com/cadets/llvm-prov
 $ cd llvm-prov
 $ mkdir -p build/Release     # or Debug
 $ cd build/Release
-$ cmake -G Ninja -D CMAKE_BUILD_TYPE=Release ../..    # or Debug
+$ cmake -G Ninja -D CMAKE_BUILD_TYPE=Release \     # or Debug
+    -D LOOM_PREFIX=/path/to/loom/build/Release \
+    ../..
+# or Debug
 $ ninja
 ```
 
