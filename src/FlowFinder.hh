@@ -60,7 +60,7 @@ class FlowFinder {
 public:
   FlowFinder(const CallSemantics &CS) : CS(CS) {}
 
-  //! A set of pairwise value-to-value flows, optimized for a particular size.
+  //! A set of pairwise value-to-value flows.
   using FlowSet = std::multimap<const Value*, const Value*>;
 
   //! Find all pairwise data flows within a function.
