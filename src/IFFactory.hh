@@ -48,6 +48,8 @@ class Value;
 
 namespace prov {
 
+class CallSemantics;
+
 /**
  * An information flow mechanism that constructs @ref Source and @ref Sink
  * objects, interprets IF metadata, etc.
@@ -59,6 +61,12 @@ class IFFactory
 
   //! Create a new FreeBSD-specific @ref IFFactory using metaio.
   static std::unique_ptr<IFFactory> FreeBSDMetaIO(InstrPtr);
+
+  /**
+   * What are the call semantics (e.g., which parameters are outputs)
+   * on this platform?
+   */
+  virtual const CallSemantics& CallSemantics() const = 0;
 
   //! Is this function call a source of information to track?
   virtual bool IsSource(CallInst*) const = 0;

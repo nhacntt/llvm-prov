@@ -31,6 +31,7 @@
  */
 
 #include "IFFactory.hh"
+#include "PosixCallSemantics.hh"
 
 #include <llvm/ADT/StringSet.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -50,6 +51,8 @@ class MetaIO : public IFFactory {
 public:
   MetaIO(InstrPtr);
 
+  const class CallSemantics& CallSemantics() const override { return CS; }
+
   bool IsSource(CallInst*) const override;
   bool CanSink(CallInst*) const override;
 
@@ -66,6 +69,7 @@ private:
   InstrPtr Instr;
   Module& Mod;
   LLVMContext& Ctx;
+  PosixCallSemantics CS;
   IntegerType *i32, *i64;
 };
 
