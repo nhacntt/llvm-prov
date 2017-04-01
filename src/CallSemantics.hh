@@ -74,7 +74,7 @@ class CallSemantics
    * pointer to the `read(2)` system call, we are outputting data into that
    * buffer, so we should treat that pointer as an output rather than an input.
    */
-  virtual SmallVector<const Value*, 2> CallOutputs(const CallInst*) const = 0;
+  virtual SmallVector<Value*, 2> CallOutputs(CallInst*) const = 0;
 
 };
 

@@ -42,7 +42,7 @@ using namespace llvm;
 using namespace llvm::prov;
 
 
-typedef std::unordered_set<const User*> UserSet;
+typedef std::unordered_set<User*> UserSet;
 
 /**
  * Find all Users that are directly derived from a source Value.
@@ -51,18 +51,17 @@ typedef std::unordered_set<const User*> UserSet;
  * @param   After       only include Users that are found after this Instruction
  *                      (if set, otherwise include all derived values)
  */
-static UserSet DerivationsFrom(const Value *Source,
-                               const Instruction *After = nullptr);
+static UserSet DerivationsFrom(Value *Source, Instruction *After = nullptr);
 
 /**
  * Find all of the User values that are contained in a BasicBlock.
  */
 static void FindInBlock(const UserSet& Needles, UserSet& ResultUsers,
-                        const BasicBlock *BB);
+                        BasicBlock *BB);
 
 
 FlowFinder::FlowSet
-FlowFinder::FindPairwise(const Function &Fn, const AliasAnalysis &AA) {
+FlowFinder::FindPairwise(Function &Fn, const AliasAnalysis &AA) {
   FlowFinder::FlowSet Flows;
 
   for (auto &I : instructions(Fn)) {
@@ -72,7 +71,7 @@ FlowFinder::FindPairwise(const Function &Fn, const AliasAnalysis &AA) {
   return Flows;
 }
 
-void FlowFinder::CollectPairwise(const Value *Src, const AliasAnalysis &AA,
+void FlowFinder::CollectPairwise(Value *Src, const AliasAnalysis &AA,
                                  FlowSet& Flows) const {
   // Ignore constants and already-considered nodes.
   if (isa<Constant>(Src) or Flows.find(Src) != Flows.end()) {
@@ -81,21 +80,21 @@ void FlowFinder::CollectPairwise(const Value *Src, const AliasAnalysis &AA,
 
   UserSet InfluencedUsers;
 
-  if (const CallInst *Call = dyn_cast<CallInst>(Src)) {
-    for (const Value *Dest : CS.CallOutputs(Call)) {
+  if (CallInst *Call = dyn_cast<CallInst>(Src)) {
+    for (Value *Dest : CS.CallOutputs(Call)) {
       UserSet DestUsers = DerivationsFrom(Dest->stripPointerCasts(), Call);
       InfluencedUsers.insert(DestUsers.begin(), DestUsers.end());
     }
 
-  } else if (const StoreInst *Store = dyn_cast<StoreInst>(Src)) {
-    const Value *Ptr = Store->getPointerOperand()->stripPointerCasts();
+  } else if (StoreInst *Store = dyn_cast<StoreInst>(Src)) {
+    Value *Ptr = Store->getPointerOperand()->stripPointerCasts();
     InfluencedUsers = DerivationsFrom(Ptr, Store);
 
   } else {
     InfluencedUsers = DerivationsFrom(Src, dyn_cast<Instruction>(Src));
   }
 
-  for (const Value *V : InfluencedUsers) {
+  for (Value *V : InfluencedUsers) {
     Flows.insert({ Src, V });
     CollectPairwise(V, AA, Flows);
   }
@@ -150,11 +149,11 @@ void FlowFinder::Graph(const FlowSet& Flows, llvm::raw_ostream &Out) const {
   Out << "}\n";
 }
 
-static UserSet DerivationsFrom(const Value *Source, const Instruction *After) {
+static UserSet DerivationsFrom(Value *Source, Instruction *After) {
   // Start by finding all users. This set will be trimmed down as we find its
   // elements in the call graph and put them in DirectUsers.
   UserSet Users;
-  for (const Use &U : Source->uses()) {
+  for (Use &U : Source->uses()) {
     Users.insert(U.getUser());
   }
 
@@ -163,10 +162,10 @@ static UserSet DerivationsFrom(const Value *Source, const Instruction *After) {
   UserSet DirectUsers;
 
   // Start with successive users within the same BasicBlock.
-  const BasicBlock *BB = After->getParent();
+  BasicBlock *BB = After->getParent();
   bool FoundValue = (After == nullptr);
 
-  for (const Instruction &I : *BB) {
+  for (Instruction &I : *BB) {
     // Look for the value itself within this BasicBlock: the instruction
     // immediately after this one is the first potential successive use.
     if (not FoundValue) {
@@ -175,14 +174,14 @@ static UserSet DerivationsFrom(const Value *Source, const Instruction *After) {
     }
 
     // If this instruction (which comes after `After`) is a User, note it.
-    const User *U = &I;
+    User *U = &I;
     if (Users.count(U) == 1) {
       DirectUsers.insert(U);
     }
   }
 
   // Next, find all users in successor blocks.
-  for (const BasicBlock *Successor : BB->getTerminator()->successors()) {
+  for (BasicBlock *Successor : BB->getTerminator()->successors()) {
     FindInBlock(Users, DirectUsers, Successor);
   }
 
@@ -190,9 +189,9 @@ static UserSet DerivationsFrom(const Value *Source, const Instruction *After) {
 }
 
 static void FindInBlock(const UserSet& Needles, UserSet& ResultUsers,
-                        const BasicBlock *BB) {
+                        BasicBlock *BB) {
 
-  for (const Instruction &I : *BB) {
+  for (Instruction &I : *BB) {
     if (Needles.count(&I) == 1) {
       ResultUsers.insert(&I);
     }

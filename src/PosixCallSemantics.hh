@@ -51,7 +51,7 @@ class PosixCallSemantics : public CallSemantics
   public:
   PosixCallSemantics();
 
-  SmallVector<const Value*, 2> CallOutputs(const CallInst*) const override;
+  SmallVector<Value*, 2> CallOutputs(CallInst*) const override;
 
   private:
   const std::multimap<std::string, int> ArgNumbers;

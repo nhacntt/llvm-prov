@@ -61,17 +61,17 @@ public:
   FlowFinder(const CallSemantics &CS) : CS(CS) {}
 
   //! A set of pairwise value-to-value flows.
-  using FlowSet = std::multimap<const Value*, const Value*>;
+  using FlowSet = std::multimap<Value*, Value*>;
 
   //! Find all pairwise data flows within a function.
-  FlowSet FindPairwise(const Function&, const AliasAnalysis&);
+  FlowSet FindPairwise(Function&, const AliasAnalysis&);
 
   //! Output a GraphViz dot representation of a set of pairwise flows.
   void Graph(const FlowSet&, llvm::raw_ostream&) const;
 
 private:
   //! Collect transitive closure of pairwise information flows from @ref V.
-  void CollectPairwise(const Value *, const AliasAnalysis &AA, FlowSet&) const;
+  void CollectPairwise(Value *, const AliasAnalysis &AA, FlowSet&) const;
 
   const CallSemantics &CS;
 };

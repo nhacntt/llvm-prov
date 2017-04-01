@@ -58,9 +58,9 @@ PosixCallSemantics::PosixCallSemantics()
 {
 }
 
-SmallVector<const Value*, 2>
-PosixCallSemantics::CallOutputs(const CallInst *Call) const {
-  SmallVector<const Value*, 2> Outputs = { Call };
+SmallVector<Value*, 2>
+PosixCallSemantics::CallOutputs(CallInst *Call) const {
+  SmallVector<Value*, 2> Outputs = { Call };
 
   Function *Target = Call->getCalledFunction();
   if (not Target or not Target->hasName()) {
