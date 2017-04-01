@@ -1,6 +1,7 @@
 add_llvm_loadable_module(LLVMProv
 	IFFactory-FreeBSD.cc
 	OptPass.cc
+	PosixCallSemantics.cc
 
 	# Link explicitly against the library's full path, as CMake's normal
 	# target_link_libraries() mechanism likes to change paths into -L/-l
