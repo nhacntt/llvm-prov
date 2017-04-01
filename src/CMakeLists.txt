@@ -1,4 +1,5 @@
 add_llvm_loadable_module(LLVMProv
+	FlowFinder.cc
 	IFFactory-FreeBSD.cc
 	OptPass.cc
 	PosixCallSemantics.cc
