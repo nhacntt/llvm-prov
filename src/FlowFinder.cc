@@ -36,8 +36,6 @@
 #include <llvm/IR/InstIterator.h>
 #include <llvm/Support/raw_ostream.h>
 
-#include <unordered_set>
-
 using namespace llvm;
 using namespace llvm::prov;
 
@@ -69,6 +67,25 @@ FlowFinder::FindPairwise(Function &Fn, const AliasAnalysis &AA) {
   }
 
   return Flows;
+}
+
+FlowFinder::ValueSet
+FlowFinder::FindEventual(const FlowSet& Pairs, Value *Source, ValuePredicate F)
+{
+  ValueSet Sinks;
+
+  auto Range = Pairs.equal_range(Source);
+  for (auto i = Range.first; i != Range.second; i++) {
+    Value *Dest = i->second;
+    if (F(Dest)) {
+      Sinks.emplace(Dest);
+    }
+
+    ValueSet Next = FindEventual(Pairs, Dest, F);
+    Sinks.insert(Next.begin(), Next.end());
+  }
+
+  return Sinks;
 }
 
 void FlowFinder::CollectPairwise(Value *Src, const AliasAnalysis &AA,

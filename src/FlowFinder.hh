@@ -36,7 +36,9 @@
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include <functional>
 #include <map>
+#include <unordered_set>
 
 
 namespace llvm {
@@ -65,6 +67,25 @@ public:
 
   //! Find all pairwise data flows within a function.
   FlowSet FindPairwise(Function&, const AliasAnalysis&);
+
+  using ValueSet = std::unordered_set<Value*>;
+  using ValuePredicate = std::function<bool (const Value*)>;
+
+  /**
+   * Find macro (not necessarily pairwise) flows within a procedure from a
+   * source to the set of eventual sinks that satisfy a predicate.
+   *
+   * This method computes over the transitive closure of pairwise "flows-to"
+   * relations described in @b Pairs. When a flowed-to Value satisfies the 
+   * ValuePredicate P, it is added to the resulting ValueSet and the transitive
+   * closure operation continues; intermediate sinks are included in the result
+   * alongside final sinks. That is, in the following value chain:
+   *
+   * [Source] -> A -> B -> [Sink1] -> C -> D -> [Sink2]
+   *
+   * `FindEventual(Pairs, Source, IsSink)` will return both Sink1 and Sink2.
+   */
+  ValueSet FindEventual(const FlowSet& Pairs, Value *Source, ValuePredicate P);
 
   //! Output a GraphViz dot representation of a set of pairwise flows.
   void Graph(const FlowSet&, llvm::raw_ostream&) const;
