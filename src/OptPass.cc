@@ -41,6 +41,8 @@
 #include <llvm/Analysis/MemoryDependenceAnalysis.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/InstIterator.h>
+#include <llvm/Support/Error.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <sstream>
@@ -68,6 +70,10 @@ namespace llvm {
       AU.addPreserved<AAResultsWrapperPass>();
     }
   };
+
+  cl::opt<bool>
+  GraphDataFlow("dfa-graph", cl::init(false),
+    cl::desc("output each function's data flow in a .dot file"));
 }
 
 
@@ -93,6 +99,18 @@ bool Provenance::runOnFunction(Function &Fn)
 
   const AliasAnalysis &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
   FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, AA);
+
+  if (GraphDataFlow) {
+    std::error_code Err;
+    raw_fd_ostream FlowGraph((Fn.getName() + "-dataflow.dot").str(),
+        Err, sys::fs::OpenFlags::F_RW | sys::fs::OpenFlags::F_Text);
+
+    if (Err) {
+      errs() << "Error opening graph file: " << Err.message() << "\n";
+    } else {
+      FF.Graph(PairwiseFlows, FlowGraph);
+    }
+  }
 
   std::map<Value*, std::vector<Value*>> DataFlows;
 
