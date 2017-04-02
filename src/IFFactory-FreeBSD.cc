@@ -53,8 +53,8 @@ public:
 
   const class CallSemantics& CallSemantics() const override { return CS; }
 
-  bool IsSource(CallInst*) const override;
-  bool CanSink(CallInst*) const override;
+  bool IsSource(const CallInst*) const override;
+  bool CanSink(const CallInst*) const override;
 
   Source TranslateSource(CallInst*) override;
   bool TranslateSink(CallInst*, const Source&) override;
@@ -88,7 +88,7 @@ MetaIO::MetaIO(InstrPtr I)
 }
 
 
-bool MetaIO::IsSource(CallInst *Call) const {
+bool MetaIO::IsSource(const CallInst *Call) const {
   Function *F = Call->getCalledFunction();
   if (not (F and F->hasName())) {
     return false;
@@ -106,7 +106,7 @@ bool MetaIO::IsSource(CallInst *Call) const {
   return (SourceNames.find(Name) != SourceNames.end());
 }
 
-bool MetaIO::CanSink(CallInst *Call) const {
+bool MetaIO::CanSink(const CallInst *Call) const {
   Function *F = Call->getCalledFunction();
   if (not (F and F->hasName())) {
     return false;
