@@ -1,6 +1,6 @@
 //! @file OptPass.cc  LLVM @b opt pass for adding provenance tracing to IR
 /*
- * Copyright (c) 2016 Jonathan Anderson
+ * Copyright (c) 2016-2017 Jonathan Anderson
  * All rights reserved.
  *
  * This software was developed by BAE Systems, the University of Cambridge
@@ -30,11 +30,15 @@
  * SUCH DAMAGE.
  */
 
+#include "CallSemantics.hh"
+#include "FlowFinder.hh"
 #include "IFFactory.hh"
 
 #include "loom/Instrumenter.hh"
 
 #include <llvm/Pass.h>
+#include <llvm/Analysis/AssumptionCache.h>
+#include <llvm/Analysis/MemoryDependenceAnalysis.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/Support/raw_ostream.h>
@@ -45,85 +49,78 @@ using namespace llvm;
 using namespace llvm::prov;
 using namespace loom;
 using std::string;
-using std::unique_ptr;
 
 
-namespace {
-  struct OptPass : public ModulePass {
+namespace llvm {
+  struct Provenance : public FunctionPass {
     static char ID;
-    OptPass() : ModulePass(ID) {}
+    Provenance() : FunctionPass(ID) {}
 
-    bool runOnModule(Module&) override;
+    bool runOnFunction(Function&) override;
+    void getAnalysisUsage(AnalysisUsage &AU) const override {
+      // Our instrumentation injects instructions and may extend system calls,
+      // but it doesn't modify the control-flow graph of *our* code (i.e.,
+      // it doesn't add/remove BasicBlocks or modify our own branches/returns).
+      AU.setPreservesCFG();
+
+      // We need analysis of which loads depend on which stores.
+      AU.addRequiredTransitive<AAResultsWrapperPass>();
+      AU.addPreserved<AAResultsWrapperPass>();
+    }
   };
 }
 
 
-/**
- * Collect the transitive closure of @ref V's `User`s.
- *
- * @param[in]   V        the @ref Value to collect `User`s of
- * @param[out]  Users    the set to store the `User`s in
- */
-static void CollectUsers(const Value *V, SmallPtrSetImpl<User*>& Users);
-
 static string JoinVec(const std::vector<string>&);
 
 
-bool OptPass::runOnModule(Module &Mod)
+bool Provenance::runOnFunction(Function &Fn)
 {
   auto S = InstrStrategy::Create(loom::InstrStrategy::Kind::Inline, false);
 
   auto IF = IFFactory::FreeBSDMetaIO(
-    Instrumenter::Create(Mod, JoinVec, std::move(S)));
+    Instrumenter::Create(*Fn.getParent(), JoinVec, std::move(S)));
 
-  SmallVector<CallInst*, 8> Sources;
+  auto IsSink = [&IF](const Value *V) {
+    if (auto *Call = dyn_cast<CallInst>(V)) {
+        return IF->CanSink(Call);
+    }
 
-  for (auto& Fn : Mod) {
-    for (auto& Inst : instructions(Fn)) {
-      if (CallInst* Call = dyn_cast<CallInst>(&Inst)) {
-        if (IF->IsSource(Call)) {
-          Sources.push_back(Call);
-        }
+    return false;
+  };
+
+  FlowFinder FF(IF->CallSemantics());
+
+  const AliasAnalysis &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
+  FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, AA);
+
+  std::map<Value*, std::vector<Value*>> DataFlows;
+
+  for (auto& I : instructions(Fn)) {
+    if (CallInst* Call = dyn_cast<CallInst>(&I)) {
+      if (not IF->IsSource(Call)) {
+        continue;
+      }
+
+      for (Value *Sink : FF.FindEventual(PairwiseFlows, Call, IsSink)) {
+        DataFlows[Call].push_back(Sink);
       }
     }
   }
 
   bool ModifiedIR = false;
-  for (CallInst *Call : Sources) {
-    Source Source = IF->TranslateSource(Call);
 
-    for (const Value *V : Source.Outputs()) {
-      SmallPtrSet<User*, 4> Users;
-      CollectUsers(V, Users);
+  for (auto Flow : DataFlows) {
+    Source Source = IF->TranslateSource(dyn_cast<CallInst>(Flow.first));
 
-      for (User *U : Users) {
-        if (CallInst *C = dyn_cast<CallInst>(U)) {
-          if (IF->CanSink(C)) {
-            IF->TranslateSink(C, Source);
-          }
-        }
-      }
+    for (Value *SinkCall : Flow.second) {
+      IF->TranslateSink(dyn_cast<CallInst>(SinkCall), Source);
     }
 
     ModifiedIR = true;
   }
 
   return ModifiedIR;
-}
-
-static void CollectUsers(const Value *V, SmallPtrSetImpl<User*>& Users) {
-  if (const StoreInst *Store = dyn_cast<StoreInst>(V)) {
-    V = Store->getPointerOperand();
-  }
-
-  for (const Use& U : V->uses()) {
-    User *U2 = U.getUser();
-
-    if (Users.count(U2) == 0) {
-      Users.insert(U2);
-      CollectUsers(U2, Users);
-    }
-  }
 }
 
 static string JoinVec(const std::vector<string>& V) {
@@ -133,5 +130,6 @@ static string JoinVec(const std::vector<string>& V) {
     return oss.str();
 }
 
-char OptPass::ID = 0;
-static RegisterPass<OptPass> X("prov", "Provenance tracking", false, false);
+char Provenance::ID = 0;
+
+static RegisterPass<Provenance> X("prov", "Provenance tracking");
