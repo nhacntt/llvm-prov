@@ -77,6 +77,8 @@ FlowFinder::FindEventual(const FlowSet& Pairs, Value *Source, ValuePredicate F)
   auto Range = Pairs.equal_range(Source);
   for (auto i = Range.first; i != Range.second; i++) {
     Value *Dest = i->second;
+    assert(Dest != Source);
+
     if (F(Dest)) {
       Sinks.emplace(Dest);
     }
@@ -199,6 +201,11 @@ static UserSet DerivationsFrom(Value *Source, Instruction *After) {
 
   // Next, find all users in successor blocks.
   for (BasicBlock *Successor : BB->getTerminator()->successors()) {
+    if (Successor == BB) {
+      llvm::outs()
+        << "WARNING: BasicBlock branches to itself, may frustrate analysis\n";
+      continue;
+    }
     FindInBlock(Users, DirectUsers, Successor);
   }
 
