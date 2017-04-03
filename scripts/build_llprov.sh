@@ -31,6 +31,6 @@ ninja
 cd -
 
 cd $SRC/freebsd
-#time nice env INSTRUMENT_EVERYTHING=true llvm-prov-make -j32 buildworld buildkernel installworld installkernel KERNCONF=CADETS
-time nice env llvm-prov-make -j32 buildworld buildkernel installworld installkernel KERNCONF=CADETS
+time nice env WITH_INSTRUMENT_BINARIES=yes llvm-prov-make -j32 buildworld buildkernel installworld installkernel KERNCONF=CADETS
+#time nice env llvm-prov-make -j32 buildworld buildkernel installworld installkernel KERNCONF=CADETS
 cd -
