@@ -83,7 +83,7 @@ std::unique_ptr<IFFactory> IFFactory::FreeBSDMetaIO(InstrPtr Instr) {
 
 MetaIO::MetaIO(InstrPtr I)
   : Instr(std::move(I)), Mod(this->Instr->getModule()), Ctx(Mod.getContext()),
-    i32(IntegerType::get(Ctx, 32)), i64(IntegerType::get(Ctx, 32))
+    i32(IntegerType::get(Ctx, 32)), i64(IntegerType::get(Ctx, 64))
 {
 }
 
