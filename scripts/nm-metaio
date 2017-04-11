@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+import collections
+import sys
+
+f = open(sys.argv[1], 'r')
+
+def file_syms():
+    return collections.defaultdict(str)
+
+io_names = [
+    'pread', 'pwrite', 'read', 'write', 'readv', 'preadv', 'pwritev', 'writev',
+    'mmap', 'recvfrom', 'recvmsg', 'sendfile', 'sendmsg', 'sendto'
+]
+
+current_file = None
+symbols = collections.defaultdict(file_syms)
+
+for line in f:
+    line = line.strip()
+    if line.endswith(':'):
+        if line.startswith('./'):
+            line = line[2:]
+
+        current_file = line[:-1]
+
+    elif len(line) > 1:
+        (kind, name) = line.split()[-2:]
+        name = name.split('@')[0]
+
+        basename = name[7:] if name.startswith('metaio_') else name
+
+        if basename in io_names:
+            symbols[current_file][name] = kind
+
+metaio = set()
+legacy_io = set()
+
+for (filename, sym) in symbols.items():
+    for name in sym.keys():
+        if name.startswith('metaio_'):
+            metaio.add(filename)
+
+        if name in io_names:
+            legacy_io.add(filename)
+
+legacy_only = legacy_io.difference(metaio)
+one_way = set()
+partial_metaio = legacy_io.intersection(metaio)
+full_metaio = metaio.difference(legacy_io)
+
+for name in legacy_only:
+    if len(symbols[name]) < 2:
+        one_way.add(name)
+
+def legacy_syscalls(filename):
+    return filter(lambda s: s in io_names, symbols[filename].keys())
+
+def metaio_syscalls(filename):
+    return [ s[7:] for s in symbols[filename].keys() if s.startswith('metaio_') ]
+
+print('no metaio:')
+for name in legacy_only:
+    print('%s' % name)
+    print('    %s' % ', '.join(legacy_syscalls(name)))
+    print('')
+
+print('partial metaio:')
+for name in partial_metaio:
+    print('%30s  meta:   %s' % (name, ', '.join(metaio_syscalls(name))))
+    print('%30s  legacy: %s' % ('', ', '.join(legacy_syscalls(name))))
+print('')
+
+print('full metaio:')
+for name in full_metaio:
+    print('%30s  %s' % (name, ', '.join(metaio_syscalls(name))))
+print('')
+
+print('%d without metaio (%d one-way), %d partial, %d full' % (
+    len(legacy_only), len(one_way), len(partial_metaio), len(full_metaio)))
