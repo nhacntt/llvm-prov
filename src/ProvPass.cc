@@ -1,4 +1,4 @@
-//! @file OptPass.cc  LLVM @b opt pass for adding provenance tracing to IR
+//! @file ProvPass.cc  LLVM @b opt pass for adding provenance tracing to IR
 /*
  * Copyright (c) 2016-2017 Jonathan Anderson
  * All rights reserved.
