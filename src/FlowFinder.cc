@@ -176,6 +176,10 @@ static UserSet DerivationsFrom(Value *Source, Instruction *After) {
     Users.insert(U.getUser());
   }
 
+  if (Users.empty()) {
+    return {};
+  }
+
   // Now we will look for users that come after the specified instruction
   // (whether or not they are in dominance relationships).
   UserSet DirectUsers;
