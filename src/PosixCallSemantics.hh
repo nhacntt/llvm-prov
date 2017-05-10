@@ -52,6 +52,8 @@ class PosixCallSemantics : public CallSemantics
   PosixCallSemantics();
 
   SmallVector<Value*, 2> CallOutputs(CallInst*) const override;
+  bool IsSource(const CallInst*) const override;
+  bool CanSink(const CallInst*) const override;
 
   private:
   const std::multimap<std::string, int> ArgNumbers;

@@ -33,7 +33,6 @@
 #include "IFFactory.hh"
 #include "PosixCallSemantics.hh"
 
-#include <llvm/ADT/StringSet.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
@@ -52,9 +51,6 @@ public:
   MetaIO(InstrPtr);
 
   const class CallSemantics& CallSemantics() const override { return CS; }
-
-  bool IsSource(const CallInst*) const override;
-  bool CanSink(const CallInst*) const override;
 
   Source TranslateSource(CallInst*) override;
   bool TranslateSink(CallInst*, const Source&) override;
@@ -87,42 +83,6 @@ MetaIO::MetaIO(InstrPtr I)
 {
 }
 
-
-bool MetaIO::IsSource(const CallInst *Call) const {
-  Function *F = Call->getCalledFunction();
-  if (not (F and F->hasName())) {
-    return false;
-  }
-
-  StringRef Name = F->getName();
-
-  static llvm::StringSet<> SourceNames({
-    "mmap",
-    "pread", "preadv",
-    "read", "readv",
-    /* recv, */ "recvfrom", "recvmsg", /* recvmmsg */
-  });
-
-  return (SourceNames.find(Name) != SourceNames.end());
-}
-
-bool MetaIO::CanSink(const CallInst *Call) const {
-  Function *F = Call->getCalledFunction();
-  if (not (F and F->hasName())) {
-    return false;
-  }
-
-  StringRef Name = F->getName();
-
-  static llvm::StringSet<> SinkNames({
-    /* "mmap", */ // information actually flows when we write into the memory
-    "pwrite", "pwritev",
-    "sendmsg", "sendto",
-    "write", "writev",
-  });
-
-  return (SinkNames.find(Name) != SinkNames.end());
-}
 
 Source MetaIO::TranslateSource(CallInst *Call) {
   // Identify the function being called

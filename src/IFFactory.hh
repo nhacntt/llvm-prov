@@ -68,12 +68,6 @@ class IFFactory
    */
   virtual const CallSemantics& CallSemantics() const = 0;
 
-  //! Is this function call a source of information to track?
-  virtual bool IsSource(const CallInst*) const = 0;
-
-  //! Can this function call be a sink for tracked information?
-  virtual bool CanSink(const CallInst*) const = 0;
-
   /**
    * Create a @ref Source for information coming out of this @ref CallInst.
    *

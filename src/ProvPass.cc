@@ -86,16 +86,17 @@ bool Provenance::runOnFunction(Function &Fn)
 
   auto IF = IFFactory::FreeBSDMetaIO(
     Instrumenter::Create(*Fn.getParent(), JoinVec, std::move(S)));
+  const CallSemantics& CS = IF->CallSemantics();
 
-  auto IsSink = [&IF](const Value *V) {
+  auto IsSink = [&CS](const Value *V) {
     if (auto *Call = dyn_cast<CallInst>(V)) {
-        return IF->CanSink(Call);
+        return CS.CanSink(Call);
     }
 
     return false;
   };
 
-  FlowFinder FF(IF->CallSemantics());
+  FlowFinder FF(CS);
 
   const AliasAnalysis &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
   FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, AA);
@@ -116,7 +117,7 @@ bool Provenance::runOnFunction(Function &Fn)
 
   for (auto& I : instructions(Fn)) {
     if (CallInst* Call = dyn_cast<CallInst>(&I)) {
-      if (not IF->IsSource(Call)) {
+      if (not CS.IsSource(Call)) {
         continue;
       }
 

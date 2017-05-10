@@ -32,6 +32,7 @@
 
 #include "PosixCallSemantics.hh"
 
+#include <llvm/ADT/StringSet.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
@@ -88,4 +89,41 @@ PosixCallSemantics::CallOutputs(CallInst *Call) const {
   Outputs.push_back(Call->getArgOperand(ArgNum));
 
   return Outputs;
+}
+
+
+bool PosixCallSemantics::IsSource(const CallInst *Call) const {
+  Function *F = Call->getCalledFunction();
+  if (not (F and F->hasName())) {
+    return false;
+  }
+
+  StringRef Name = F->getName();
+
+  static llvm::StringSet<> SourceNames({
+    "mmap",
+    "pread", "preadv",
+    "read", "readv",
+    /* recv, */ "recvfrom", "recvmsg", /* recvmmsg */
+  });
+
+  return (SourceNames.find(Name) != SourceNames.end());
+}
+
+bool PosixCallSemantics::CanSink(const CallInst *Call) const {
+  Function *F = Call->getCalledFunction();
+  if (not (F and F->hasName())) {
+    return false;
+  }
+
+  StringRef Name = F->getName();
+
+  static llvm::StringSet<> SinkNames({
+    /* "mmap", */ // information actually flows when we write into the memory
+    "pwrite", "pwritev",
+    "sendmsg", "sendto",
+    "write", "writev",
+  });
+
+  return (SinkNames.find(Name) != SinkNames.end());
 }
