@@ -1,0 +1,32 @@
+#!/bin/sh
+
+. `dirname $0`/xtools.sh
+
+check_llvm_prefix
+check_tool ${LLVM_PREFIX} CC clang
+
+compile_normally()
+{
+	${XCC} $*
+}
+
+compile_with_llvm_prov()
+{
+
+	find_llvm_prov_libraries
+
+	bc_args="`echo $* | sed 's/-o \([^ ]*\)/-o \1.bc/'`"
+
+	${XCC} -emit-llvm ${bc_args} && ${XCC} $*
+}
+
+# Only wrap executions that compile, not link.
+case "$0 $*" in
+	*\ -c\ *)
+		compile_with_llvm_prov $*
+	;;
+
+	*)
+		compile_normally $*
+	;;
+esac
