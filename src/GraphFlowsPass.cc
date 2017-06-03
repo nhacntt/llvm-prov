@@ -1,4 +1,4 @@
-//! @file ProvPass.cc  LLVM @b opt pass for adding provenance tracing to IR
+//! @file GraphFlowsPass.cc  @b opt pass to graph data flows
 /*
  * Copyright (c) 2016-2017 Jonathan Anderson
  * All rights reserved.
@@ -32,7 +32,7 @@
 
 #include "CallSemantics.hh"
 #include "FlowFinder.hh"
-#include "IFFactory.hh"
+#include "PosixCallSemantics.hh"
 
 #include "loom/Instrumenter.hh"
 
@@ -54,9 +54,9 @@ using std::string;
 
 
 namespace llvm {
-  struct Provenance : public FunctionPass {
+  struct GraphFlowsPass : public FunctionPass {
     static char ID;
-    Provenance() : FunctionPass(ID) {}
+    GraphFlowsPass() : FunctionPass(ID) {}
 
     bool runOnFunction(Function&) override;
     void getAnalysisUsage(AnalysisUsage &AU) const override {
@@ -76,13 +76,10 @@ namespace llvm {
 static string JoinVec(const std::vector<string>&);
 
 
-bool Provenance::runOnFunction(Function &Fn)
+bool GraphFlowsPass::runOnFunction(Function &Fn)
 {
-  auto S = InstrStrategy::Create(loom::InstrStrategy::Kind::Inline, false);
-
-  auto IF = IFFactory::FreeBSDMetaIO(
-    Instrumenter::Create(*Fn.getParent(), JoinVec, std::move(S)));
-  const CallSemantics& CS = IF->CallSemantics();
+  PosixCallSemantics CS;
+  FlowFinder FF(CS);
 
   auto IsSink = [&CS](const Value *V) {
     if (auto *Call = dyn_cast<CallInst>(V)) {
@@ -92,10 +89,18 @@ bool Provenance::runOnFunction(Function &Fn)
     return false;
   };
 
-  FlowFinder FF(CS);
-
   const AliasAnalysis &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
   FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, AA);
+
+  std::error_code Err;
+  raw_fd_ostream FlowGraph((Fn.getName() + "-dataflow.dot").str(),
+      Err, sys::fs::OpenFlags::F_RW | sys::fs::OpenFlags::F_Text);
+
+  if (Err) {
+    errs() << "Error opening graph file: " << Err.message() << "\n";
+  } else {
+    FF.Graph(PairwiseFlows, FlowGraph);
+  }
 
   std::map<Value*, std::vector<Value*>> DataFlows;
 
@@ -111,19 +116,7 @@ bool Provenance::runOnFunction(Function &Fn)
     }
   }
 
-  bool ModifiedIR = false;
-
-  for (auto Flow : DataFlows) {
-    Source Source = IF->TranslateSource(dyn_cast<CallInst>(Flow.first));
-
-    for (Value *SinkCall : Flow.second) {
-      IF->TranslateSink(dyn_cast<CallInst>(SinkCall), Source);
-    }
-
-    ModifiedIR = true;
-  }
-
-  return ModifiedIR;
+  return false;
 }
 
 static string JoinVec(const std::vector<string>& V) {
@@ -133,6 +126,6 @@ static string JoinVec(const std::vector<string>& V) {
     return oss.str();
 }
 
-char Provenance::ID = 0;
+char GraphFlowsPass::ID = 0;
 
-static RegisterPass<Provenance> X("prov", "Provenance tracking");
+static RegisterPass<GraphFlowsPass> X("graph-flows", "GraphFlowsPass tracking");
