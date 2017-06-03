@@ -2,64 +2,14 @@
 
 . `dirname $0`/xtools.sh
 
-#
-# Find the LLVM tools whose versions match ours:
-#
-#  - in an explicit LLVM_PREFIX environment variable
-#  - relative to the `opt` tool in the current PATH
-#
-if [ "${LLVM_PREFIX}" = "" ]
-then
-	llvm_link=`which llvm-link`
-	if [ -e "${llvm_link}" ]
-	then
-		LLVM_PREFIX=`dirname ${llvm_link} | xargs dirname`
-	else
-		echo "LLVM_PREFIX not set and no llvm-link in PATH"
-		exit 1
-	fi
-fi
-
-
+check_llvm_prefix
 check_tool ${LLVM_PREFIX} CC clang
 check_tool ${LLVM_PREFIX} CXX clang++
 check_tool ${LLVM_PREFIX} LLC llc
 check_tool ${LLVM_PREFIX} LLVM_LINK llvm-link
 check_tool ${LLVM_PREFIX} OPT opt
 
-
-#
-# Find the LLVMProv library:
-#
-#  - as explicitly specified with LLVM_PROV_LIB
-#  - within LLVM_PREFIX
-#
-
-loomlib=LLVMLoom.so
-
-if [ "${LOOM_LIB}" = "" ]
-then
-	LOOM_LIB="${LLVM_PREFIX}/lib/${loomlib}"
-
-	if ! [ -e "${LOOM_LIB}" ]
-	then
-		echo "LOOM_LIB not specified, no ${loomlib} in LLVM_PREFIX"
-		exit 1
-	fi
-fi
-
-provlib=LLVMProv.so
-
-if [ "${LLVM_PROV_LIB}" = "" ]
-then
-	LLVM_PROV_LIB="${LLVM_PREFIX}/lib/${provlib}"
-
-	if ! [ -e "${LLVM_PROV_LIB}" ]
-	then
-		echo "LLVM_PROV_LIB not specified, no ${provlib} in LLVM_PREFIX"
-		exit 1
-	fi
-fi
+find_llvm_prov_libraries
 
 export LLVM_INSTR_FLAGS="-load ${LLVM_PROV_LIB} -load ${LOOM_LIB} -prov ${LLVM_INSTR_FLAGS}"
 
