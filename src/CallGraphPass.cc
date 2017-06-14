@@ -159,14 +159,14 @@ struct JSONFormat : public FileFormat {
   void Write(raw_ostream &Out, const FnVec &Functions) const override {
     Out
       << "{"
-      << "\"functions\":["
+      << "\"functions\":{"
       ;
 
     // Sigh, JSON... sigh.
     for (size_t i = 0, Len = Functions.size(); i < Len; i++) {
       const FunctionData &Fn = Functions[i];
       Out
-        << "{\"" << Fn.Name << "\":{"
+        << "\"" << Fn.Name << "\":{"
         << "\"calls\":["
         ;
 
@@ -178,13 +178,13 @@ struct JSONFormat : public FileFormat {
         }
       }
 
-      Out << "]}}";
+      Out << "]}";
       if (i < (Len - 1)) {
         Out << ',';
       }
     }
 
-    Out << "]}\n";
+    Out << "}}\n";
   }
 };
 
