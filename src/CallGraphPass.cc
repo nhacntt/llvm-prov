@@ -87,7 +87,7 @@ bool CallGraphPass::runOnModule(Module &M)
   assert(Format);
 
   std::error_code Err;
-  raw_fd_ostream FlowGraph(Format->Filename((M.getName() + "-callgraph").str()),
+  raw_fd_ostream FlowGraph(Format->Filename((M.getName() + ".callgraph").str()),
       Err, sys::fs::OpenFlags::F_RW | sys::fs::OpenFlags::F_Text);
 
   if (Err) {
