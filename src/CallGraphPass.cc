@@ -62,7 +62,7 @@ namespace {
   using FnVec = std::vector<const FunctionData>;
 
   struct FileFormat {
-    enum class Kind { JSON, YAML };
+    enum class Kind { Dot, JSON, YAML };
 
     virtual string Filename(StringRef Prefix) const = 0;
     virtual void Write(raw_ostream&, const FnVec&)
@@ -74,6 +74,7 @@ namespace {
   cl::opt<FileFormat::Kind> CGFormat("cg-format",
     cl::desc("callgraph output format"),
     cl::values(
+      clEnumValN(FileFormat::Kind::Dot,  "dot",  "GraphViz dot"),
       clEnumValN(FileFormat::Kind::JSON, "json", "JavaScript Object Notation"),
       clEnumValN(FileFormat::Kind::YAML, "yaml", "Yet Another Markup Language")
     )
@@ -118,6 +119,37 @@ bool CallGraphPass::runOnModule(Module &M)
   return false;
 }
 
+
+struct DotFormat : public FileFormat {
+  string Filename(StringRef Prefix) const override {
+    return (Prefix + ".dot").str();
+  }
+
+  void Write(raw_ostream &Out, const FnVec &Functions) const override {
+    Out
+      << "digraph {\n"
+      << "  node [ shape = \"rectangle\" ];\n"
+      << "  rankdir = TB;\n"
+      << "\n"
+      ;
+
+    for (const FunctionData& Fn : Functions) {
+      Out
+        << "  \"" << Fn.Name << "\" [ label = \"" << Fn.Name << "\" ];\n"
+        ;
+    }
+
+    Out << "\n";
+
+    for (const FunctionData& Fn : Functions) {
+      for (const auto &Target : Fn.CallTargets) {
+        Out << "  \"" << Fn.Name << "\" -> \"" << Target << "\";\n";
+      }
+    }
+
+    Out << "}\n";
+  }
+};
 
 struct JSONFormat : public FileFormat {
   string Filename(StringRef Prefix) const override {
@@ -180,6 +212,9 @@ struct YAMLFormat : public FileFormat {
 
 std::unique_ptr<FileFormat> FileFormat::Create(Kind K) {
   switch (K) {
+  case Kind::Dot:
+    return std::unique_ptr<FileFormat>(new DotFormat());
+
   case Kind::JSON:
     return std::unique_ptr<FileFormat>(new JSONFormat());
 
