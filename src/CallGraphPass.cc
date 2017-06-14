@@ -198,8 +198,8 @@ struct YAMLFormat : public FileFormat {
 
     for (const FunctionData& Fn : Functions) {
       Out
-        << "  -\n    " << Fn.Name << ":\n"
-        << "      calls:\n"
+        << "  " << Fn.Name << ":\n"
+        << "    calls:\n"
         ;
 
       for (const auto &Target : Fn.CallTargets) {
