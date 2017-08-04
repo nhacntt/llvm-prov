@@ -75,11 +75,10 @@ PosixCallSemantics::CallOutputs(CallInst *Call) const {
   }
 
   const size_t ArgNum = i->second;
-  auto& Params = Target->getArgumentList();
-  if (Params.size() < ArgNum) {
+  if (ArgNum >= Call->getNumArgOperands()) {
     errs()
       << "ERROR: " << FnName << " has only "
-      << Params.size() << " params, expected at least "
+      << Call->getNumArgOperands() << " params, expected at least "
       << (ArgNum + 1)
       ;
 
