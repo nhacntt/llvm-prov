@@ -27,4 +27,7 @@ fi
 export NO_WERROR=
 export WERROR=
 
+# Enable instrumentation
+export WITH_INSTRUMENT_BINARIES=yes
+
 make $*
