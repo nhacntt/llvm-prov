@@ -33,12 +33,6 @@ $ cd build/Release
 $ cmake -G Ninja -D CMAKE_BUILD_TYPE=Release ../..    # or Debug
 ```
 
-Then set some more useful environment variables:
-
-```sh
-$ export PATH=/path/to/loom/source/scripts:$PATH
-```
-
 
 ## Build llvm-prov
 
@@ -57,10 +51,11 @@ $ cmake -G Ninja -D CMAKE_BUILD_TYPE=Release \     # or Debug
 $ ninja
 ```
 
-Then set an environment variable pointing at the `llvm-prov` library:
+Then set an environment variable pointing at the `llvm-prov` library and extend your `PATH` to include the llvm-prov `scripts` directory:
 
 ```sh
 $ export LLVM_PROV_LIB=/path/to/llvm-prov/build/lib/LLVMProv.so
+$ export PATH=/path/to/llvm-prov/source/scripts:$PATH
 ```
 
 
