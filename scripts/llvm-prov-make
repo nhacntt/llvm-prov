@@ -30,4 +30,20 @@ export WERROR=
 # Enable instrumentation
 export WITH_INSTRUMENT_BINARIES=yes
 
+echo "------------------------------------------------------------------------"
+echo "llvm-prov-make: Using LLVM tools found at:"
+echo "------------------------------------------------------------------------"
+echo "XCC:        ${XCC}"
+echo "XCXX:       ${XCXX}"
+echo "XLLC:       ${XLLC}"
+echo "XLLVM_LINK: ${XLLVM_LINK}"
+echo "XOPT:       ${XOPT}"
+echo "------------------------------------------------------------------------"
+echo "llvm-prov-make: Loom and llvm-prov arguments:"
+echo "------------------------------------------------------------------------"
+echo "LOOM_LIB:      ${LOOM_LIB}"
+echo "LLVM_PROV_LIB: ${LLVM_PROV_LIB}"
+echo "LLVM_INSTR_FLAGS: ${LLVM_INSTR_FLAGS}"
+echo "------------------------------------------------------------------------"
+
 make $*
