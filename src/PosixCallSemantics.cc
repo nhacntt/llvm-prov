@@ -38,6 +38,9 @@
 using namespace llvm;
 using namespace llvm::prov;
 
+#if defined(__DARWIN_ALIAS)
+#define DARWIN_SYMBOL_NAME(name) "\01_" name __DARWIN_SUF_UNIX03
+#endif
 
 std::unique_ptr<CallSemantics> CallSemantics::Posix() {
   return std::unique_ptr<CallSemantics>(new PosixCallSemantics());
@@ -55,6 +58,15 @@ PosixCallSemantics::PosixCallSemantics()
     { "recvmsg", 1 },
     { "recvmmsg", 1 },
     { "mmap", 0 },
+#if defined(DARWIN_SYMBOL_NAME)
+    { DARWIN_SYMBOL_NAME("read"), 1 },
+    { DARWIN_SYMBOL_NAME("pread"), 1 },
+    { DARWIN_SYMBOL_NAME("readv"), 1 },
+    { DARWIN_SYMBOL_NAME("recv"), 1 },
+    { DARWIN_SYMBOL_NAME("recvfrom"), 1 },
+    { DARWIN_SYMBOL_NAME("recvmsg"), 1 },
+    { DARWIN_SYMBOL_NAME("mmap"), 0 },
+#endif
   })
 {
 }
@@ -97,16 +109,7 @@ bool PosixCallSemantics::IsSource(const CallInst *Call) const {
     return false;
   }
 
-  StringRef Name = F->getName();
-
-  static llvm::StringSet<> SourceNames({
-    "mmap",
-    "pread", "preadv",
-    "read", "readv",
-    /* recv, */ "recvfrom", "recvmsg", /* recvmmsg */
-  });
-
-  return (SourceNames.find(Name) != SourceNames.end());
+  return (ArgNumbers.find(F->getName()) != ArgNumbers.end());
 }
 
 bool PosixCallSemantics::CanSink(const CallInst *Call) const {
@@ -122,6 +125,13 @@ bool PosixCallSemantics::CanSink(const CallInst *Call) const {
     "pwrite", "pwritev",
     "sendmsg", "sendto",
     "write", "writev",
+#if defined(DARWIN_SYMBOL_NAME)
+    DARWIN_SYMBOL_NAME("pwrite"),
+    DARWIN_SYMBOL_NAME("sendmsg"),
+    DARWIN_SYMBOL_NAME("sendto"),
+    DARWIN_SYMBOL_NAME("write"),
+    DARWIN_SYMBOL_NAME("writev"),
+#endif
   });
 
   return (SinkNames.find(Name) != SinkNames.end());
