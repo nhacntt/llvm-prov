@@ -73,6 +73,9 @@ namespace llvm {
 }
 
 
+cl::opt<string> OutputDirectory("flow-dir", cl::init("data-flow-graphs"),
+    cl::desc("Directory for data flow graphs"), cl::value_desc("dir"));
+
 static string JoinVec(const std::vector<string>&);
 
 
@@ -92,9 +95,17 @@ bool GraphFlowsPass::runOnFunction(Function &Fn)
   MemorySSA &MSSA = getAnalysis<MemorySSAWrapperPass>().getMSSA();
   FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, MSSA);
 
-  std::error_code Err;
-  raw_fd_ostream FlowGraph((Fn.getName() + "-dataflow.dot").str(),
-      Err, sys::fs::OpenFlags::F_RW | sys::fs::OpenFlags::F_Text);
+  std::error_code Err = sys::fs::create_directory(OutputDirectory);
+  if (Err) {
+    errs() << "Error creating output directory '" << OutputDirectory << "': "
+      << Err.message() << "\n";
+    return false;
+  }
+
+  std::string Filename = (OutputDirectory + "/" + Fn.getName() + ".dot").str();
+  auto Flags = sys::fs::OpenFlags::F_RW | sys::fs::OpenFlags::F_Text;
+
+  raw_fd_ostream FlowGraph(Filename, Err, Flags);
 
   if (Err) {
     errs() << "Error opening graph file: " << Err.message() << "\n";

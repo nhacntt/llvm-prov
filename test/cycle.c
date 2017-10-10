@@ -3,7 +3,7 @@
  * @brief  Tests information flow tracking involving possible cycles
  *
  * RUN: %clang %cflags -emit-llvm -S %s -o %t.ll
- * RUN: %opt -disable-output -graph-flows %t.ll
+ * RUN: %opt -disable-output -graph-flows -flow-dir=%t.graphs %t.ll
  *
  * XFAIL: *
  */
