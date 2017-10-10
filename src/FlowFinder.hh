@@ -103,7 +103,7 @@ public:
   ValueSet FindEventual(const FlowSet& Pairs, Value *Source, ValuePredicate P);
 
   //! Output a GraphViz dot representation of a set of pairwise flows.
-  void Graph(const FlowSet&, llvm::raw_ostream&) const;
+  void Graph(const FlowSet&, llvm::StringRef Label, llvm::raw_ostream&) const;
 
 private:
   //! Collect transitive closure of pairwise information flows to @ref V.

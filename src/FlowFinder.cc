@@ -39,11 +39,16 @@
 #include <llvm/IR/User.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include <unordered_map>
+#include <unordered_set>
+
 using namespace llvm;
 using namespace llvm::prov;
+using std::unordered_map;
+using std::unordered_set;
 
 
-typedef std::unordered_set<Value*> ValueSet;
+typedef unordered_set<Value*> ValueSet;
 
 /**
  * Find all memory operations that may have clobbered the location being
@@ -148,7 +153,7 @@ static void Describe(const Value *V, llvm::raw_ostream &Out) {
     Shape = "invhouse";
   }
 
-  Out << "\t\"" << V << "\" [ style = \"filled\", label = \"";
+  Out << "\t\t\"" << V << "\" [ style = \"filled\", label = \"";
   V->print(Out);
   Out
     << "\", fillcolor = \"" << Colour << "99\""
@@ -176,27 +181,62 @@ static void Describe(const Value *Source, const Value *Dest,
     ;
 }
 
-void FlowFinder::Graph(const FlowSet& Flows, llvm::raw_ostream &Out) const {
+void FlowFinder::Graph(const FlowSet& Flows, StringRef Label,
+                       raw_ostream &Out) const {
   Out << "digraph {\n"
+    << "\tfontname = \"Inconsolata\";\n"
+    << "\tlabel = \"" << Label << "\";\n"
     << "\tnode [ fontname = \"Inconsolata\" ];\n"
     << "\n"
     ;
 
-  ValueSet Values;
+  unordered_set<const Argument*> Args;
+  unordered_map<const BasicBlock*, unordered_set<const Instruction*>> Blocks;
+
+  auto SaveValue = [&Args, &Blocks](const Value *V) {
+    if (auto *I = dyn_cast<Instruction>(V)) {
+      Blocks[I->getParent()].insert(I);
+
+    } else if (auto *A = dyn_cast<Argument>(V)) {
+      Args.insert(A);
+
+    } else {
+      assert(false && "unreachable");
+    }
+  };
 
   for (auto& Flow : Flows) {
-    Value *Dest = Flow.first;
-    Value *Src = Flow.second.first;
-    FlowKind Kind = Flow.second.second;
+    const Value *Dest = Flow.first;
+    const Value *Src = Flow.second.first;
+    const FlowKind Kind = Flow.second.second;
 
-    Values.insert(Src);
-    Values.insert(Dest);
+    SaveValue(Src);
+    SaveValue(Dest);
 
     Describe(Src, Dest, Kind, Out);
   }
 
-  for (const Value *V : Values) {
-    Describe(V, Out);
+  for (auto *A : Args) {
+    Describe(A, Out);
+  }
+
+  for (auto i : Blocks) {
+    const BasicBlock *BB = i.first;
+    auto &Instructions = i.second;
+
+    Out << "\tsubgraph \"cluster_" << BB->getName() << "\" {\n"
+      << "\t\tlabel = \"" << BB->getName() << "\";\n"
+      << "\t\tlabeljust = \"l\";\n"
+      << "\t\tstyle = \"filled\";\n"
+      << "\t\tstyle = \"filled\";\n"
+      << "\n"
+      ;
+
+    for (auto *I : Instructions) {
+      Describe(I, Out);
+    }
+
+    Out << "\t}\n";
   }
 
   Out << "}\n";

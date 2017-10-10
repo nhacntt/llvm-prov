@@ -110,7 +110,7 @@ bool GraphFlowsPass::runOnFunction(Function &Fn)
   if (Err) {
     errs() << "Error opening graph file: " << Err.message() << "\n";
   } else {
-    FF.Graph(PairwiseFlows, FlowGraph);
+    FF.Graph(PairwiseFlows, Fn.getName(), FlowGraph);
   }
 
   std::map<Value*, std::vector<Value*>> DataFlows;
