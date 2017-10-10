@@ -63,8 +63,22 @@ class FlowFinder {
 public:
   FlowFinder(const CallSemantics &CS) : CS(CS) {}
 
-  //! A set of pairwise value-to-value flows (Dest -> Source).
-  using FlowSet = std::multimap<Value*, Value*>;
+  //! Ways that information can flow among Values
+  enum class FlowKind {
+    //! Direct operand relationship, e.g., a + b or gep x
+    Operand,
+
+    //! Indirect flow through memory, e.g., from a store to a load
+    Memory,
+  };
+
+  /**
+   * A set of pairwise value-to-value flows.
+   *
+   * Each pairwise flow is an entry in the multimap of the form
+   * (Dest -> (Source, Kind)).
+   */
+  using FlowSet = std::multimap<Value*, std::pair<Value*, FlowKind>>;
 
   //! Find all pairwise data flows within a function.
   FlowSet FindPairwise(Function&, llvm::MemorySSA&);

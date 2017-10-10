@@ -76,7 +76,7 @@ FlowFinder::FindEventual(const FlowSet& Pairs, Value *Source, ValuePredicate F)
 
   auto Range = Pairs.equal_range(Source);
   for (auto i = Range.first; i != Range.second; i++) {
-    Value *Dest = i->second;
+    Value *Dest = i->second.first;
     assert(Dest != Source);
 
     if (F(Dest)) {
@@ -110,7 +110,7 @@ void FlowFinder::CollectPairwise(Value *V, MemorySSA &MSSA,
       continue;
     }
 
-    Flows.insert({ Dest, Operand });
+    Flows.insert({ Dest, { Operand, FlowKind::Operand }});
   }
 
   // Load instructions have an implicit dependency on instructions that have
@@ -119,7 +119,7 @@ void FlowFinder::CollectPairwise(Value *V, MemorySSA &MSSA,
   // significance is that it's a MemoryUse, figure out who clobbered the memory.
   if (auto *Inst = dyn_cast<Instruction>(Dest)) {
     for (Value *V : ClobberersOf(Inst, MSSA)) {
-      Flows.insert({ Dest, V });
+      Flows.insert({ Dest, { V, FlowKind::Memory }});
     }
   }
 }
@@ -157,17 +157,39 @@ static void Describe(const Value *V, llvm::raw_ostream &Out) {
     ;
 }
 
+static std::string LineAttrs(FlowFinder::FlowKind Kind)
+{
+  switch (Kind) {
+  case FlowFinder::FlowKind::Operand:
+    return "[ color = \"lightsteelblue4\", style = \"solid\" ]";
+
+  case FlowFinder::FlowKind::Memory:
+    return "[ color = \"orangered3\", style = \"dashed\" ]";
+  }
+}
+
+static void Describe(const Value *Source, const Value *Dest,
+                     FlowFinder::FlowKind Kind, llvm::raw_ostream &Out)
+{
+  Out << "\t\"" << Source << "\" -> \"" << Dest << "\" " << LineAttrs(Kind)
+    << "\n"
+    ;
+}
+
 void FlowFinder::Graph(const FlowSet& Flows, llvm::raw_ostream &Out) const {
-  Out << "digraph {\n";
+  Out << "digraph {\n"
+    << "\tnode [ fontname = \"Inconsolata\" ];\n"
+    << "\n"
+    ;
 
   for (auto& Flow : Flows) {
     const Value *Dest = Flow.first;
-    const Value *Src = Flow.second;
+    const Value *Src = Flow.second.first;
+    const FlowKind Kind = Flow.second.second;
 
     Describe(Src, Out);
     Describe(Dest, Out);
-
-    Out << "\t\"" << Src << "\" -> \"" << Dest << "\";\n";
+    Describe(Src, Dest, Kind, Out);
   }
 
   Out << "}\n";
