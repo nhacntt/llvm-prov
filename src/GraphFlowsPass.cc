@@ -37,8 +37,7 @@
 #include "loom/Instrumenter.hh"
 
 #include <llvm/Pass.h>
-#include <llvm/Analysis/AssumptionCache.h>
-#include <llvm/Analysis/MemoryDependenceAnalysis.h>
+#include <llvm/Analysis/MemorySSA.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/Support/Error.h>
@@ -68,6 +67,7 @@ namespace llvm {
       // We need analysis of which loads depend on which stores.
       AU.addRequiredTransitive<AAResultsWrapperPass>();
       AU.addPreserved<AAResultsWrapperPass>();
+      AU.addRequiredTransitive<MemorySSAWrapperPass>();
     }
   };
 }
@@ -89,8 +89,8 @@ bool GraphFlowsPass::runOnFunction(Function &Fn)
     return false;
   };
 
-  const AliasAnalysis &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
-  FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, AA);
+  MemorySSA &MSSA = getAnalysis<MemorySSAWrapperPass>().getMSSA();
+  FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, MSSA);
 
   std::error_code Err;
   raw_fd_ostream FlowGraph((Fn.getName() + "-dataflow.dot").str(),

@@ -33,37 +33,37 @@
 #include "CallSemantics.hh"
 #include "FlowFinder.hh"
 
+#include <llvm/ADT/iterator_range.h>
+#include <llvm/Analysis/MemorySSA.h>
 #include <llvm/IR/InstIterator.h>
+#include <llvm/IR/User.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
 using namespace llvm::prov;
 
 
-typedef std::unordered_set<User*> UserSet;
+typedef std::unordered_set<Value*> ValueSet;
 
 /**
- * Find all Users that are directly derived from a source Value.
- *
- * @param   Source      the Value data is flowing from
- * @param   After       only include Users that are found after this Instruction
- *                      (if set, otherwise include all derived values)
+ * Find all memory operations that may have clobbered the location being
+ * accessed by an Instruction.
  */
-static UserSet DerivationsFrom(Value *Source, Instruction *After = nullptr);
+static ValueSet ClobberersOf(Instruction *, MemorySSA &);
 
 /**
- * Find all of the User values that are contained in a BasicBlock.
+ * Recursively walk backwards through MemoryPhi operations until we reach
+ * MemoryDef operations and real Instruction values that clobber memory.
  */
-static void FindInBlock(const UserSet& Needles, UserSet& ResultUsers,
-                        BasicBlock *BB);
+static ValueSet PhiClobberers(MemoryPhi *, MemorySSA &);
 
 
 FlowFinder::FlowSet
-FlowFinder::FindPairwise(Function &Fn, const AliasAnalysis &AA) {
+FlowFinder::FindPairwise(Function &Fn, MemorySSA& MSSA) {
   FlowFinder::FlowSet Flows;
 
   for (auto &I : instructions(Fn)) {
-    CollectPairwise(&I, AA, Flows);
+    CollectPairwise(&I, MSSA, Flows);
   }
 
   return Flows;
@@ -90,32 +90,37 @@ FlowFinder::FindEventual(const FlowSet& Pairs, Value *Source, ValuePredicate F)
   return Sinks;
 }
 
-void FlowFinder::CollectPairwise(Value *Src, const AliasAnalysis &AA,
+void FlowFinder::CollectPairwise(Value *V, MemorySSA &MSSA,
                                  FlowSet& Flows) const {
-  // Ignore constants and already-considered nodes.
-  if (isa<Constant>(Src) or Flows.find(Src) != Flows.end()) {
+
+  auto *Dest = dyn_cast<User>(V);
+  if (not Dest) {
     return;
   }
 
-  UserSet InfluencedUsers;
-
-  if (CallInst *Call = dyn_cast<CallInst>(Src)) {
-    for (Value *Dest : CS.CallOutputs(Call)) {
-      UserSet DestUsers = DerivationsFrom(Dest->stripPointerCasts(), Call);
-      InfluencedUsers.insert(DestUsers.begin(), DestUsers.end());
-    }
-
-  } else if (StoreInst *Store = dyn_cast<StoreInst>(Src)) {
-    Value *Ptr = Store->getPointerOperand()->stripPointerCasts();
-    InfluencedUsers = DerivationsFrom(Ptr, Store);
-
-  } else {
-    InfluencedUsers = DerivationsFrom(Src, dyn_cast<Instruction>(Src));
+  // Ignore constants and already-considered nodes.
+  if (isa<Constant>(Dest) or Flows.find(Dest) != Flows.end()) {
+    return;
   }
 
-  for (Value *V : InfluencedUsers) {
-    Flows.insert({ Src, V });
-    CollectPairwise(V, AA, Flows);
+  for (Value *Operand : Dest->operands()) {
+    // Ignore constants and pseudo-Value types like debug metadata.
+    if (not isa<Argument>(Operand) and not isa<User>(Operand)
+        or isa<Constant>(Operand)) {
+      continue;
+    }
+
+    Flows.insert({ Dest, Operand });
+  }
+
+  // Load instructions have an implicit dependency on instructions that have
+  // clobbered the location being loaded from. If the value we're inspecting is
+  // an Instruction, and if it has significance to MemorySSA, and if that
+  // significance is that it's a MemoryUse, figure out who clobbered the memory.
+  if (auto *Inst = dyn_cast<Instruction>(Dest)) {
+    for (Value *V : ClobberersOf(Inst, MSSA)) {
+      Flows.insert({ Dest, V });
+    }
   }
 }
 
@@ -156,8 +161,8 @@ void FlowFinder::Graph(const FlowSet& Flows, llvm::raw_ostream &Out) const {
   Out << "digraph {\n";
 
   for (auto& Flow : Flows) {
-    const Value *Src = Flow.first;
-    const Value *Dest = Flow.second;
+    const Value *Dest = Flow.first;
+    const Value *Src = Flow.second;
 
     Describe(Src, Out);
     Describe(Dest, Out);
@@ -168,60 +173,63 @@ void FlowFinder::Graph(const FlowSet& Flows, llvm::raw_ostream &Out) const {
   Out << "}\n";
 }
 
-static UserSet DerivationsFrom(Value *Source, Instruction *After) {
-  // Start by finding all users. This set will be trimmed down as we find its
-  // elements in the call graph and put them in DirectUsers.
-  UserSet Users;
-  for (Use &U : Source->uses()) {
-    Users.insert(U.getUser());
-  }
-
-  if (Users.empty()) {
+static ValueSet ClobberersOf(Instruction *I, MemorySSA &MSSA)
+{
+  MemoryAccess *MA = MSSA.getMemoryAccess(I);
+  if (not MA) {
     return {};
   }
 
-  // Now we will look for users that come after the specified instruction
-  // (whether or not they are in dominance relationships).
-  UserSet DirectUsers;
+  auto *MU = dyn_cast<MemoryUse>(MA);
+  if (not MU) {
+    return {};
+  }
 
-  // Start with successive users within the same BasicBlock.
-  BasicBlock *BB = After->getParent();
-  bool FoundValue = (After == nullptr);
+  ValueSet Clobberers;
+  MemoryAccess *Clobberer = MSSA.getWalker()->getClobberingMemoryAccess(MA);
 
-  for (Instruction &I : *BB) {
-    // Look for the value itself within this BasicBlock: the instruction
-    // immediately after this one is the first potential successive use.
-    if (not FoundValue) {
-      FoundValue = (&I == After);
+  if (auto *Def = dyn_cast<MemoryDef>(Clobberer)) {
+    // The memory was written to by an easily-discernable instruction like
+    // a store that comes earlier in the function.
+    Clobberers.insert(Def->getMemoryInst());
+
+  } else if (auto *Phi = dyn_cast<MemoryPhi>(Clobberer)) {
+    // Is there a potentially more complex scenario in which multiple stores
+    // can clobber the memory location? If so, we'll need to (recursively)
+    // chase down all of the possible clobbering instructions.
+    auto Sub = PhiClobberers(Phi, MSSA);
+    Clobberers.insert(Sub.begin(), Sub.end());
+  }
+
+  return Clobberers;
+}
+
+
+static ValueSet PhiClobberers(MemoryPhi *Phi, MemorySSA &MSSA)
+{
+  ValueSet Clobberers;
+
+  for (Use &U : Phi->incoming_values()) {
+    Value *V = U.get();
+
+    if (auto *SubPhi = dyn_cast<MemoryPhi>(V)) {
+      auto Sub = PhiClobberers(SubPhi, MSSA);
+      Clobberers.insert(Sub.begin(), Sub.end());
       continue;
     }
 
-    // If this instruction (which comes after `After`) is a User, note it.
-    User *U = &I;
-    if (Users.count(U) == 1) {
-      DirectUsers.insert(U);
-    }
-  }
+    auto *MD = dyn_cast<MemoryDef>(U.get());
+    assert(MD);
 
-  // Next, find all users in successor blocks.
-  for (BasicBlock *Successor : BB->getTerminator()->successors()) {
-    if (Successor == BB) {
-      llvm::outs()
-        << "WARNING: BasicBlock branches to itself, may frustrate analysis\n";
+    if (MSSA.isLiveOnEntryDef(MD)) {
       continue;
     }
-    FindInBlock(Users, DirectUsers, Successor);
+
+    assert(MD->getMemoryInst());
+    Clobberers.insert(MD->getMemoryInst());
   }
 
-  return DirectUsers;
+  return Clobberers;
 }
 
-static void FindInBlock(const UserSet& Needles, UserSet& ResultUsers,
-                        BasicBlock *BB) {
 
-  for (Instruction &I : *BB) {
-    if (Needles.count(&I) == 1) {
-      ResultUsers.insert(&I);
-    }
-  }
-}

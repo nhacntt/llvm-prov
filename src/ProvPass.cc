@@ -37,8 +37,7 @@
 #include "loom/Instrumenter.hh"
 
 #include <llvm/Pass.h>
-#include <llvm/Analysis/AssumptionCache.h>
-#include <llvm/Analysis/MemoryDependenceAnalysis.h>
+#include <llvm/Analysis/MemorySSA.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/Support/Error.h>
@@ -66,8 +65,7 @@ namespace llvm {
       AU.setPreservesCFG();
 
       // We need analysis of which loads depend on which stores.
-      AU.addRequiredTransitive<AAResultsWrapperPass>();
-      AU.addPreserved<AAResultsWrapperPass>();
+      AU.addRequiredTransitive<MemorySSAWrapperPass>();
     }
   };
 }
@@ -94,8 +92,8 @@ bool Provenance::runOnFunction(Function &Fn)
 
   FlowFinder FF(CS);
 
-  const AliasAnalysis &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
-  FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, AA);
+  auto &MSSA = getAnalysis<MemorySSAWrapperPass>().getMSSA();
+  FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, MSSA);
 
   std::map<Value*, std::vector<Value*>> DataFlows;
 

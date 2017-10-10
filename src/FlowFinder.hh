@@ -44,6 +44,7 @@
 namespace llvm {
 
 class CallInst;
+class MemorySSA;
 class Module;
 class Value;
 
@@ -62,11 +63,11 @@ class FlowFinder {
 public:
   FlowFinder(const CallSemantics &CS) : CS(CS) {}
 
-  //! A set of pairwise value-to-value flows.
+  //! A set of pairwise value-to-value flows (Dest -> Source).
   using FlowSet = std::multimap<Value*, Value*>;
 
   //! Find all pairwise data flows within a function.
-  FlowSet FindPairwise(Function&, const AliasAnalysis&);
+  FlowSet FindPairwise(Function&, llvm::MemorySSA&);
 
   using ValueSet = std::unordered_set<Value*>;
   using ValuePredicate = std::function<bool (const Value*)>;
@@ -91,8 +92,8 @@ public:
   void Graph(const FlowSet&, llvm::raw_ostream&) const;
 
 private:
-  //! Collect transitive closure of pairwise information flows from @ref V.
-  void CollectPairwise(Value *, const AliasAnalysis &AA, FlowSet&) const;
+  //! Collect transitive closure of pairwise information flows to @ref V.
+  void CollectPairwise(Value *V, MemorySSA&, FlowSet&) const;
 
   const CallSemantics &CS;
 };
