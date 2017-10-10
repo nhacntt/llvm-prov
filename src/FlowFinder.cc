@@ -182,14 +182,21 @@ void FlowFinder::Graph(const FlowSet& Flows, llvm::raw_ostream &Out) const {
     << "\n"
     ;
 
-  for (auto& Flow : Flows) {
-    const Value *Dest = Flow.first;
-    const Value *Src = Flow.second.first;
-    const FlowKind Kind = Flow.second.second;
+  ValueSet Values;
 
-    Describe(Src, Out);
-    Describe(Dest, Out);
+  for (auto& Flow : Flows) {
+    Value *Dest = Flow.first;
+    Value *Src = Flow.second.first;
+    FlowKind Kind = Flow.second.second;
+
+    Values.insert(Src);
+    Values.insert(Dest);
+
     Describe(Src, Dest, Kind, Out);
+  }
+
+  for (const Value *V : Values) {
+    Describe(V, Out);
   }
 
   Out << "}\n";
