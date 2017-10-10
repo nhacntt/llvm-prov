@@ -2,8 +2,7 @@
  * @file   cycle.c
  * @brief  Tests information flow tracking involving possible cycles
  *
- * RUN: %clang %cflags -S %s -D SOURCE="\"%s\"" -D DEST="\"%t.c\"" -emit-llvm -o %t.ll
- * RUN: %clang %cflags -S %s -D SOURCE="\"%s\"" -D DEST="\"%t.c\"" -emit-llvm -o %t.ll
+ * RUN: %clang %cflags -emit-llvm -S %s -o %t.ll
  * RUN: %opt -disable-output -graph-flows %t.ll
  *
  * XFAIL: *
