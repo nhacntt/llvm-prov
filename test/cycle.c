@@ -15,7 +15,7 @@
 void foo(int fd)
 {
 	char buffer[1024];
-	ssize_t n, total = 0;
+	ssize_t n = 0, total = 0;
 	while ((n = read(fd, buffer + n, sizeof(buffer) - n)) > 0)
 		total += n;
 }
