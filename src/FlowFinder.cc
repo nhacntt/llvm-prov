@@ -192,6 +192,9 @@ static std::string LineAttrs(FlowFinder::FlowKind Kind)
 
   case FlowFinder::FlowKind::Memory:
     return "[ color = \"orangered3\", style = \"dashed\" ]";
+
+  case FlowFinder::FlowKind::Meta:
+    return "[ color = \"olivedrab\", penwidth = 2, style = \"dotted\" ]";
   }
 }
 
