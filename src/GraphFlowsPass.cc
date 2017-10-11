@@ -81,20 +81,7 @@ static string JoinVec(const std::vector<string>&);
 
 bool GraphFlowsPass::runOnFunction(Function &Fn)
 {
-  PosixCallSemantics CS;
-  FlowFinder FF(CS);
-
-  auto IsSink = [&CS](const Value *V) {
-    if (auto *Call = dyn_cast<CallInst>(V)) {
-        return CS.CanSink(Call);
-    }
-
-    return false;
-  };
-
-  MemorySSA &MSSA = getAnalysis<MemorySSAWrapperPass>().getMSSA();
-  FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, MSSA);
-
+  // Create output directory (if it doesn't exist); open output file.
   std::error_code Err = sys::fs::create_directory(OutputDirectory);
   if (Err) {
     errs() << "Error creating output directory '" << OutputDirectory << "': "
@@ -109,9 +96,23 @@ bool GraphFlowsPass::runOnFunction(Function &Fn)
 
   if (Err) {
     errs() << "Error opening graph file: " << Err.message() << "\n";
-  } else {
-    FF.Graph(PairwiseFlows, Fn.getName(), FlowGraph);
+    return false;
   }
+
+  PosixCallSemantics CS;
+  FlowFinder FF(CS);
+
+  auto IsSink = [&CS](const Value *V) {
+    if (auto *Call = dyn_cast<CallInst>(V)) {
+        return CS.CanSink(Call);
+    }
+
+    return false;
+  };
+
+  MemorySSA &MSSA = getAnalysis<MemorySSAWrapperPass>().getMSSA();
+  FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, MSSA);
+  FF.Graph(PairwiseFlows, Fn.getName(), FlowGraph);
 
   std::map<Value*, std::vector<Value*>> DataFlows;
 
