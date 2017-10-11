@@ -114,19 +114,17 @@ bool GraphFlowsPass::runOnFunction(Function &Fn)
   };
 
   MemorySSA &MSSA = getAnalysis<MemorySSAWrapperPass>().getMSSA();
-  FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, MSSA);
-  FF.Graph(PairwiseFlows, Fn.getName(), ShowBasicBlocks, FlowGraph);
-
-  std::map<Value*, std::vector<Value*>> DataFlows;
+  FlowFinder::FlowSet Flows = FF.FindPairwise(Fn, MSSA);
+  FF.Graph(Flows, Fn.getName(), ShowBasicBlocks, FlowGraph);
 
   for (auto& I : instructions(Fn)) {
-    if (CallInst* Call = dyn_cast<CallInst>(&I)) {
-      if (not CS.IsSource(Call)) {
+    if (CallInst* Source = dyn_cast<CallInst>(&I)) {
+      if (not CS.IsSource(Source)) {
         continue;
       }
 
-      for (Value *Sink : FF.FindEventual(PairwiseFlows, Call, IsSink)) {
-        DataFlows[Call].push_back(Sink);
+      for (Value *Sink : FF.FindEventual(Flows, Source, IsSink)) {
+        Flows.insert({ Sink, { Source, FlowFinder::FlowKind::Meta }});
       }
     }
   }
