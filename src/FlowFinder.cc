@@ -79,7 +79,17 @@ FlowFinder::FindEventual(const FlowSet& Pairs, Value *Source, ValuePredicate F)
 {
   ValueSet Seen, Sinks;
 
-  CollectEventual(Sinks, Seen, Pairs, Source, F);
+  // Reverse mapping: (Src -> (Sink, Kind)) rather than (Sink -> (Src, Kind))
+  FlowSet SrcToSink;
+  for (auto i : Pairs) {
+    Value *Dest = i.first;
+    Value *Src = i.second.first;
+    FlowKind Kind = i.second.second;
+
+    SrcToSink.insert({ Src, { Dest, Kind }});
+  }
+
+  CollectEventual(Sinks, Seen, SrcToSink, Source, F);
 
   return Sinks;
 }
