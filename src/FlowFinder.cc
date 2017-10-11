@@ -181,7 +181,7 @@ static void Describe(const Value *Source, const Value *Dest,
     ;
 }
 
-void FlowFinder::Graph(const FlowSet& Flows, StringRef Label,
+void FlowFinder::Graph(const FlowSet& Flows, StringRef Label, bool ShowBBs,
                        raw_ostream &Out) const {
   Out << "digraph {\n"
     << "\tfontname = \"Inconsolata\";\n"
@@ -224,19 +224,23 @@ void FlowFinder::Graph(const FlowSet& Flows, StringRef Label,
     const BasicBlock *BB = i.first;
     auto &Instructions = i.second;
 
-    Out << "\tsubgraph \"cluster_" << BB->getName() << "\" {\n"
-      << "\t\tlabel = \"" << BB->getName() << "\";\n"
-      << "\t\tlabeljust = \"l\";\n"
-      << "\t\tstyle = \"filled\";\n"
-      << "\t\tstyle = \"filled\";\n"
-      << "\n"
-      ;
+    if (ShowBBs) {
+      Out << "\tsubgraph \"cluster_" << BB->getName() << "\" {\n"
+        << "\t\tlabel = \"" << BB->getName() << "\";\n"
+        << "\t\tlabeljust = \"l\";\n"
+        << "\t\tstyle = \"filled\";\n"
+        << "\t\tstyle = \"filled\";\n"
+        << "\n"
+        ;
+    }
 
     for (auto *I : Instructions) {
       Describe(I, Out);
     }
 
-    Out << "\t}\n";
+    if (ShowBBs) {
+      Out << "\t}\n";
+    }
   }
 
   Out << "}\n";

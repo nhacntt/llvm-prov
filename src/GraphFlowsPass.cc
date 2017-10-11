@@ -76,6 +76,9 @@ namespace llvm {
 cl::opt<string> OutputDirectory("flow-dir", cl::init("data-flow-graphs"),
     cl::desc("Directory for data flow graphs"), cl::value_desc("dir"));
 
+cl::opt<bool> ShowBasicBlocks("show-bbs", cl::init(true),
+    cl::desc("Show basic blocks in data flow graphs"));
+
 static string JoinVec(const std::vector<string>&);
 
 
@@ -112,7 +115,7 @@ bool GraphFlowsPass::runOnFunction(Function &Fn)
 
   MemorySSA &MSSA = getAnalysis<MemorySSAWrapperPass>().getMSSA();
   FlowFinder::FlowSet PairwiseFlows = FF.FindPairwise(Fn, MSSA);
-  FF.Graph(PairwiseFlows, Fn.getName(), FlowGraph);
+  FF.Graph(PairwiseFlows, Fn.getName(), ShowBasicBlocks, FlowGraph);
 
   std::map<Value*, std::vector<Value*>> DataFlows;
 
