@@ -23,7 +23,8 @@ void foo(int fd)
 	// CHECK-DAG: [[N_SUB_LOAD:"[0-9a-fx]+"]] -> [[SUB]]
 	// CHECK-DAG: [[READ:"[0-9a-fx]+"]] [{{.*}}label = "{{.*}}call {{.*}}read{{["]?}}(
 	while ((n = read(fd, buffer + n, sizeof(buffer) - n)) > 0)
-		// CHECK-DAG: [[ADD:"[0-9a-fx]+"]] [{{.*}}label = "{{.*}}add
-		// CHECK-DAG: [[ADD]] -> [[N_SUB_LOAD]]
+		// CHECK-DAG: [[ADD:"[0-9a-fx]+"]] [{{.*}}label = "{{.*}} add nsw
+		// CHECK-DAG: [[ADD]] -> [[STORE_ADDED_N:"[0-9a-fx]+"]]
+		// CHECK-DAG: [[STORE_ADDED_N]] -> [[N_SUB_LOAD]]
 		total += n;
 }
