@@ -117,8 +117,8 @@ void FlowFinder::CollectEventual(ValueSet &Sinks, ValueSet &Seen,
   }
 }
 
-void FlowFinder::CollectPairwise(Value *V, MemorySSA &MSSA,
-                                 FlowSet& Flows) const {
+void
+FlowFinder::CollectPairwise(Value *V, MemorySSA &MSSA, FlowSet& Flows) const {
 
   auto *Dest = dyn_cast<User>(V);
   if (not Dest) {
