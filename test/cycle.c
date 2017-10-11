@@ -4,8 +4,6 @@
  *
  * RUN: %clang %cflags -emit-llvm -S %s -o %t.ll
  * RUN: %opt -disable-output -graph-flows -flow-dir=%t.graphs %t.ll
- *
- * XFAIL: *
  */
 
 #include <err.h>

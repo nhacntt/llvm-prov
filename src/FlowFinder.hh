@@ -70,6 +70,9 @@ public:
 
     //! Indirect flow through memory, e.g., from a store to a load
     Memory,
+
+    //! Summarization of a [possibly] multi-hop flow
+    Meta,
   };
 
   /**
@@ -111,8 +114,15 @@ public:
              llvm::raw_ostream&) const;
 
 private:
-  //! Collect transitive closure of pairwise information flows to @ref V.
+  //! Collect pairwise information flows to @ref V.
   void CollectPairwise(Value *V, MemorySSA&, FlowSet&) const;
+
+  /**
+   * Find all final sinks of information flows from @b Source that satisfy
+   * the predicate @b F.
+   */
+  void CollectEventual(ValueSet &Sinks, ValueSet &Seen, const FlowSet &Pairs,
+                       Value *Source, ValuePredicate F);
 
   const CallSemantics &CS;
 };

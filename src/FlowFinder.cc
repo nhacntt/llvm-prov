@@ -77,22 +77,34 @@ FlowFinder::FindPairwise(Function &Fn, MemorySSA& MSSA) {
 FlowFinder::ValueSet
 FlowFinder::FindEventual(const FlowSet& Pairs, Value *Source, ValuePredicate F)
 {
-  ValueSet Sinks;
+  ValueSet Seen, Sinks;
+
+  CollectEventual(Sinks, Seen, Pairs, Source, F);
+
+  return Sinks;
+}
+
+void FlowFinder::CollectEventual(ValueSet &Sinks, ValueSet &Seen,
+                                 const FlowSet &Pairs, Value *Source,
+                                 ValuePredicate F)
+{
+  Seen.insert(Source);
 
   auto Range = Pairs.equal_range(Source);
   for (auto i = Range.first; i != Range.second; i++) {
     Value *Dest = i->second.first;
     assert(Dest != Source);
 
+    if (Seen.find(Dest) != Seen.end()) {
+      continue;
+    }
+
     if (F(Dest)) {
       Sinks.emplace(Dest);
     }
 
-    ValueSet Next = FindEventual(Pairs, Dest, F);
-    Sinks.insert(Next.begin(), Next.end());
+    CollectEventual(Sinks, Seen, Pairs, Dest, F);
   }
-
-  return Sinks;
 }
 
 void FlowFinder::CollectPairwise(Value *V, MemorySSA &MSSA,
