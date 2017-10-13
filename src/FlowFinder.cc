@@ -278,25 +278,25 @@ static ValueSet ClobberersOf(Instruction *I, MemorySSA &MSSA)
     return {};
   }
 
-  auto *MU = dyn_cast<MemoryUse>(MA);
-  if (not MU) {
-    return {};
-  }
-
   ValueSet Clobberers;
   MemoryAccess *Clobberer = MSSA.getWalker()->getClobberingMemoryAccess(MA);
 
   if (auto *Def = dyn_cast<MemoryDef>(Clobberer)) {
     // The memory was written to by an easily-discernable instruction like
     // a store that comes earlier in the function.
-    Clobberers.insert(Def->getMemoryInst());
+    if (not MSSA.isLiveOnEntryDef(Def)) {
+      Clobberers.insert(Def->getMemoryInst());
+    }
 
   } else if (auto *Phi = dyn_cast<MemoryPhi>(Clobberer)) {
     // Is there a potentially more complex scenario in which multiple stores
     // can clobber the memory location? If so, we'll need to (recursively)
     // chase down all of the possible clobbering instructions.
-    auto Sub = PhiClobberers(Phi, MSSA);
-    Clobberers.insert(Sub.begin(), Sub.end());
+    for (Value *V : PhiClobberers(Phi, MSSA)) {
+      if (V != I) {
+        Clobberers.insert(V);
+      }
+    }
   }
 
   return Clobberers;
