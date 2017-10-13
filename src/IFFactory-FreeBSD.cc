@@ -106,7 +106,7 @@ Source MetaIO::TranslateSource(CallInst *Call) {
   // value might be the output value in question (so we need the replaced call).
   SmallVector<const Value*, 4> OutputValues;
 
-  if (Name == "mmap") {
+  if (Name.find("mmap") != StringRef::npos) {
     // The "output" of mmap(2) is the memory being mapped (the return value):
     OutputValues.push_back(Call);
 

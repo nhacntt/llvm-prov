@@ -2,8 +2,6 @@
  * @file   cp-utils.c
  * @brief  integration test: a distillation of some FreeBSD cp(1) code
  *
- * REQUIRES: freebsd
- *
  * RUN: %clang %cflags -S %s -D SOURCE="\"%s\"" -D DEST="\"%t.c\"" -emit-llvm -o %t.ll
  * RUN: %prov -S %t.ll -o %t.prov.ll
  * RUN: %filecheck %s -input-file %t.ll -check-prefix LLCHECK
@@ -70,9 +68,9 @@ copy_file(/*const FTSENT *entp, int dne*/)
 	rval = 0;
 
 	/* if (!lflag && !sflag) */ {
-		// LLCHECK: call i8* @mmap
+		// LLCHECK: call i8* @{{.*}}mmap{{"*}}(i8* null
 		// PROVCHECK: [[METAIO:%[a-z0-9]+]] = alloca %struct.metaio
-		// PROVCHECK: call i8* @metaio_mmap({{.*}}[[METAIO]]
+		// PROVCHECK: call i8* @{{"*}}metaio_{{.*}}mmap{{"*}}({{.*}}[[METAIO]]
 		if (S_ISREG(fs->st_mode) && fs->st_size > 0 &&
 		    fs->st_size <= 8 * 1024 * 1024 &&
 		    (p = mmap(NULL, (size_t)fs->st_size, PROT_READ,
@@ -80,7 +78,7 @@ copy_file(/*const FTSENT *entp, int dne*/)
 			wtotal = 0;
 			for (bufp = p, wresid = fs->st_size; ;
 			    bufp += wcount, wresid -= (size_t)wcount) {
-				// PROVCHECK: call i{{[0-9]+}} @metaio_write({{.*}}[[METAIO]]
+				// PROVCHECK: call i{{[0-9]+}} @{{"*}}metaio_{{.*}}write{{"*}}({{.*}}[[METAIO]]
 				wcount = write(to_fd, bufp, wresid);
 				if (wcount <= 0)
 					break;
