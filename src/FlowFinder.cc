@@ -132,9 +132,9 @@ FlowFinder::CollectPairwise(Value *V, MemorySSA &MSSA, FlowSet& Flows) const {
 
   // Add explicit Value-User flows exposed as LLVM operands.
   for (Value *Operand : Dest->operands()) {
-    // Ignore constants and pseudo-Value types like debug metadata.
-    if (not isa<Argument>(Operand) and not isa<User>(Operand)
-        or isa<Constant>(Operand)) {
+    // Ignore constants and non-User values (but include Arguments).
+    if (isa<Constant>(Operand) or
+        (not isa<User>(Operand) and not isa<Argument>(Operand))) {
       continue;
     }
 
