@@ -69,6 +69,8 @@ namespace {
       const = 0;
 
     static std::unique_ptr<FileFormat> Create(Kind);
+
+    virtual ~FileFormat() {}
   };
 
   cl::opt<FileFormat::Kind> CGFormat("cg-format",
