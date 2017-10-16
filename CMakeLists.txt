@@ -31,5 +31,8 @@ include_directories(${LOOM_INCLUDE_DIRS})
 # Always use C++11.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+# Enable warnings (i.e., suppress LLVM's insertion of `-w`).
+set(LLVM_ENABLE_WARNINGS TRUE)
+
 add_subdirectory(src)
 add_subdirectory(test)

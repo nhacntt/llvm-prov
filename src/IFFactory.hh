@@ -1,6 +1,6 @@
 //! @file IFFactory.hh  Definition of @ref llvm::prov::IFFactory.
 /*
- * Copyright (c) 2016 Jonathan Anderson
+ * Copyright (c) 2016-2017 Jonathan Anderson
  * All rights reserved.
  *
  * This software was developed by BAE Systems, the University of Cambridge
@@ -58,6 +58,8 @@ class IFFactory
 {
   public:
   typedef std::unique_ptr<loom::Instrumenter> InstrPtr;
+
+  virtual ~IFFactory();
 
   //! Create a new FreeBSD-specific @ref IFFactory using metaio.
   static std::unique_ptr<IFFactory> FreeBSDMetaIO(InstrPtr);

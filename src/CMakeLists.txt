@@ -1,7 +1,9 @@
 add_llvm_loadable_module(LLVMProv
+	CallSemantics.cc
 	FlowFinder.cc
 	CallGraphPass.cc
 	GraphFlowsPass.cc
+	IFFactory.cc
 	IFFactory-FreeBSD.cc
 	PosixCallSemantics.cc
 	ProvPass.cc

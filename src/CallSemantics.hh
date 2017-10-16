@@ -1,6 +1,6 @@
 //! @file CallSemantics.hh  Declaration of @ref llvm::prov::CallSemantics.
 /*
- * Copyright (c) 2016 Jonathan Anderson
+ * Copyright (c) 2016-2017 Jonathan Anderson
  * All rights reserved.
  *
  * This software was developed by BAE Systems, the University of Cambridge
@@ -63,6 +63,8 @@ namespace prov {
 class CallSemantics
 {
   public:
+  virtual ~CallSemantics();
+
   //! Create an object to describe POSIX information-flow semantics.
   static std::unique_ptr<CallSemantics> Posix();
 
