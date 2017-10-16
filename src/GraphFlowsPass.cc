@@ -79,9 +79,6 @@ cl::opt<string> OutputDirectory("flow-dir", cl::init("data-flow-graphs"),
 cl::opt<bool> ShowBasicBlocks("show-bbs", cl::init(true),
     cl::desc("Show basic blocks in data flow graphs"));
 
-static string JoinVec(const std::vector<string>&);
-
-
 bool GraphFlowsPass::runOnFunction(Function &Fn)
 {
   // Create output directory (if it doesn't exist); open output file.
@@ -130,13 +127,6 @@ bool GraphFlowsPass::runOnFunction(Function &Fn)
   }
 
   return false;
-}
-
-static string JoinVec(const std::vector<string>& V) {
-    std::ostringstream oss;
-    std::copy(V.begin(), V.end() - 1, std::ostream_iterator<string>(oss, "_"));
-    oss << *V.rbegin();
-    return oss.str();
 }
 
 char GraphFlowsPass::ID = 0;
