@@ -1,4 +1,4 @@
-//! @file IFFactory.hh  Definition of @ref llvm::prov::IFFactory.
+//! @file IFFactory.hh  Declaration of @ref llvm::prov::IFFactory.
 /*
  * Copyright (c) 2016-2017 Jonathan Anderson
  * All rights reserved.
