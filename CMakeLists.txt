@@ -31,9 +31,5 @@ include_directories(${LOOM_INCLUDE_DIRS})
 # Always use C++11.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-# Always build with all warnings.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wstrict-prototypes")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-
 add_subdirectory(src)
 add_subdirectory(test)
