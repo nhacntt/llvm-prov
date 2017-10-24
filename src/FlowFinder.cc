@@ -60,7 +60,7 @@ static ValueSet ClobberersOf(Instruction *, MemorySSA &);
  * Recursively walk backwards through MemoryPhi operations until we reach
  * MemoryDef operations and real Instruction values that clobber memory.
  */
-static ValueSet PhiClobberers(MemoryPhi *, MemorySSA &);
+static ValueSet PhiClobberers(MemoryPhi *, MemorySSA &, ValueSet &Seen);
 
 
 FlowFinder::FlowSet
@@ -292,7 +292,8 @@ static ValueSet ClobberersOf(Instruction *I, MemorySSA &MSSA)
     // Is there a potentially more complex scenario in which multiple stores
     // can clobber the memory location? If so, we'll need to (recursively)
     // chase down all of the possible clobbering instructions.
-    for (Value *V : PhiClobberers(Phi, MSSA)) {
+    ValueSet Seen;
+    for (Value *V : PhiClobberers(Phi, MSSA, Seen)) {
       if (V != I) {
         Clobberers.insert(V);
       }
@@ -303,15 +304,20 @@ static ValueSet ClobberersOf(Instruction *I, MemorySSA &MSSA)
 }
 
 
-static ValueSet PhiClobberers(MemoryPhi *Phi, MemorySSA &MSSA)
+static ValueSet PhiClobberers(MemoryPhi *Phi, MemorySSA &MSSA, ValueSet &Seen)
 {
+  if (Seen.find(Phi) != Seen.end()) {
+    return {};
+  }
+
+  Seen.insert(Phi);
   ValueSet Clobberers;
 
   for (Use &U : Phi->incoming_values()) {
     Value *V = U.get();
 
     if (auto *SubPhi = dyn_cast<MemoryPhi>(V)) {
-      auto Sub = PhiClobberers(SubPhi, MSSA);
+      auto Sub = PhiClobberers(SubPhi, MSSA, Seen);
       Clobberers.insert(Sub.begin(), Sub.end());
       continue;
     }
