@@ -99,7 +99,8 @@ bool GraphFlowsPass::runOnFunction(Function &Fn)
     return false;
   }
 
-  PosixCallSemantics CS;
+  //PosixCallSemantics CS;
+  AnnotationCallSemantics CS;
   FlowFinder FF(CS);
 
   auto IsSink = [&CS](const Value *V) {

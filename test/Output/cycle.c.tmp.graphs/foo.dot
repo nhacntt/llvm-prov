@@ -1,0 +1,86 @@
+digraph {
+	fontname = "Inconsolata";
+	label = "foo";
+	node [ fontname = "Inconsolata" ];
+
+	"0x80701c2b8" -> "0x80701c438" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d0a0" -> "0x80701c438" [ color = "orangered3" ]
+	"0x80701c378" -> "0x80701c498" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d180" -> "0x80701c498" [ color = "orangered3" ]
+	"0x80705d3b0" -> "0x80701c498" [ color = "orangered3" ]
+	"0x80701c378" -> "0x80701c4f8" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d180" -> "0x80701c4f8" [ color = "orangered3" ]
+	"0x80705d3b0" -> "0x80701c4f8" [ color = "orangered3" ]
+	"0x80701c378" -> "0x80701c558" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d260" -> "0x80701c558" [ color = "orangered3" ]
+	"0x80701c3d8" -> "0x80701c5b8" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d180" -> "0x80701c5b8" [ color = "orangered3" ]
+	"0x80705d3b0" -> "0x80701c5b8" [ color = "orangered3" ]
+	"0x80701c438" -> "0x8070275a0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x8070ac8b0" -> "0x8070275a0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d1f0" -> "0x8070275a0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d180" -> "0x8070275a0" [ color = "orangered3" ]
+	"0x80705d3b0" -> "0x8070275a0" [ color = "orangered3" ]
+	"0x8070c7c10" -> "0x80705d0a0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c2b8" -> "0x80705d0a0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c378" -> "0x80705d110" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c3d8" -> "0x80705d180" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c4f8" -> "0x80705d1f0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x8070275a0" -> "0x80705d260" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c378" -> "0x80705d260" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d180" -> "0x80705d260" [ color = "orangered3" ]
+	"0x80705d3b0" -> "0x80705d260" [ color = "orangered3" ]
+	"0x8070275a0" -> "0x80705d2d0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c5b8" -> "0x80705d340" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c558" -> "0x80705d340" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d340" -> "0x80705d3b0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c3d8" -> "0x80705d3b0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d180" -> "0x80705d3b0" [ color = "orangered3" ]
+	"0x8071352c8" -> "0x8070ac8b0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c498" -> "0x8070ac8b0" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80705d2d0" -> "0x8070accc8" [ color = "lightsteelblue4", style = "solid" ]
+	"0x80701c318" -> "0x8071352c8" [ color = "lightsteelblue4", style = "solid" ]
+		"0x8070c7c10" [ style = "filled", label = "i32 %fd", fillcolor = "#eeeeee99", shape = "box" ];
+	subgraph "cluster_while.cond" {
+		label = "while.cond";
+		labeljust = "l";
+		style = "filled";
+		style = "filled";
+
+		"0x80701c438" [ style = "filled", label = "  %0 = load i32, i32* %fd.addr, align 4, !dbg !31", fillcolor = "#99ff9999", shape = "house" ];
+		"0x80701c4f8" [ style = "filled", label = "  %2 = load i64, i64* %n, align 8, !dbg !35", fillcolor = "#99ff9999", shape = "house" ];
+		"0x8070275a0" [ style = "filled", label = "  %call = call i64 @read(i32 %0, i8* %add.ptr, i64 %sub), !dbg !37", fillcolor = "#ffff9999", shape = "cds" ];
+		"0x80701c498" [ style = "filled", label = "  %1 = load i64, i64* %n, align 8, !dbg !33", fillcolor = "#99ff9999", shape = "house" ];
+		"0x80705d260" [ style = "filled", label = "  store i64 %call, i64* %n, align 8, !dbg !38", fillcolor = "#ff999999", shape = "invhouse" ];
+		"0x8071352c8" [ style = "filled", label = "  %arraydecay = getelementptr inbounds [1024 x i8], [1024 x i8]* %buffer, i32 0, i32 0, !dbg !32", fillcolor = "#99999999", shape = "tab" ];
+		"0x8070ac8b0" [ style = "filled", label = "  %add.ptr = getelementptr inbounds i8, i8* %arraydecay, i64 %1, !dbg !34", fillcolor = "#99999999", shape = "tab" ];
+		"0x80705d1f0" [ style = "filled", label = "  %sub = sub i64 1024, %2, !dbg !36", fillcolor = "#eeeeee99", shape = "box" ];
+		"0x80705d2d0" [ style = "filled", label = "  %cmp = icmp sgt i64 %call, 0, !dbg !39", fillcolor = "#eeeeee99", shape = "box" ];
+		"0x8070accc8" [ style = "filled", label = "  br i1 %cmp, label %while.body, label %while.end, !dbg !30", fillcolor = "#ff99ff99", shape = "cds" ];
+	}
+	subgraph "cluster_while.body" {
+		label = "while.body";
+		labeljust = "l";
+		style = "filled";
+		style = "filled";
+
+		"0x80705d3b0" [ style = "filled", label = "  store i64 %add, i64* %total, align 8, !dbg !41", fillcolor = "#ff999999", shape = "invhouse" ];
+		"0x80701c558" [ style = "filled", label = "  %3 = load i64, i64* %n, align 8, !dbg !40", fillcolor = "#99ff9999", shape = "house" ];
+		"0x80705d340" [ style = "filled", label = "  %add = add nsw i64 %4, %3, !dbg !41", fillcolor = "#eeeeee99", shape = "box" ];
+		"0x80701c5b8" [ style = "filled", label = "  %4 = load i64, i64* %total, align 8, !dbg !41", fillcolor = "#99ff9999", shape = "house" ];
+	}
+	subgraph "cluster_entry" {
+		label = "entry";
+		labeljust = "l";
+		style = "filled";
+		style = "filled";
+
+		"0x80701c3d8" [ style = "filled", label = "  %total = alloca i64, align 8", fillcolor = "#9999ff99", shape = "ellipse" ];
+		"0x80705d0a0" [ style = "filled", label = "  store i32 %fd, i32* %fd.addr, align 4", fillcolor = "#ff999999", shape = "invhouse" ];
+		"0x80701c378" [ style = "filled", label = "  %n = alloca i64, align 8", fillcolor = "#9999ff99", shape = "ellipse" ];
+		"0x80701c318" [ style = "filled", label = "  %buffer = alloca [1024 x i8], align 16", fillcolor = "#9999ff99", shape = "ellipse" ];
+		"0x80705d180" [ style = "filled", label = "  store i64 0, i64* %total, align 8, !dbg !29", fillcolor = "#ff999999", shape = "invhouse" ];
+		"0x80701c2b8" [ style = "filled", label = "  %fd.addr = alloca i32, align 4", fillcolor = "#9999ff99", shape = "ellipse" ];
+		"0x80705d110" [ style = "filled", label = "  store i64 0, i64* %n, align 8, !dbg !27", fillcolor = "#ff999999", shape = "invhouse" ];
+	}
+}
