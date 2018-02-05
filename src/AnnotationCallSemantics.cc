@@ -8,9 +8,6 @@
 using namespace std;
 using namespace llvm;
 
-unique_ptr<prov::CallSemantics> prov::CallSemantics::Posix() {
-	return NULL ;//unique_ptr<CallSemantics>(new AnnotationCallSemantics());
-}
 
 AnnotationCallSemantics::AnnotationCallSemantics(	const map<string,vector<int>> InputArg,
 													const map<string,vector<int>> OutputArg,

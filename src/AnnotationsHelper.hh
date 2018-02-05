@@ -2,8 +2,8 @@
 #define ANNOTATIONS_HELPER_SEMANTICS_H
 
 #include "../include/ProvAnnotations.hh"
+#include "DeclarationAnalysis.hh"
 
-#include <llvm/Analysis/DeclarationAnalysis.h>
 #include <llvm/ADT/StringSet.h>
 
 #include <map>

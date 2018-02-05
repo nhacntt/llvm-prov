@@ -9,8 +9,10 @@ FuncDeclList getFuncListfromYAML(string Filename){
 	FuncDeclList FL;
 	
 	auto F=FL.fromYAML(Filename);		
-	if (std::error_code ec = F.getError()) 
+	if (std::error_code ec = F.getError()){
+	       	errs()<<"Error when opening "<< Filename<<": ";	
 		errs()<<ec.message();
+	}
 	else 
 		FL=F.get();
 

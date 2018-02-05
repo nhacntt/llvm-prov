@@ -33,6 +33,7 @@
 #include "CallSemantics.hh"
 #include "FlowFinder.hh"
 #include "PosixCallSemantics.hh"
+#include "AnnotationCallSemantics.hh"
 
 #include "loom/Instrumenter.hh"
 

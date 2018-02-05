@@ -3,7 +3,7 @@
  * @brief  metaio propagation with trivial data flow analysis
  *
  * RUN: %clang %cflags -S %s -D SOURCE="\"%s\"" -D DEST="\"%t.c\"" -emit-llvm -o %t.ll
- * RUN: %clang %cflags -S %s -D SOURCE="\"%s\"" -D DEST="\"%t.c\"" -emit-llvm -o %t.ll
+ * RUN: clang-declaration-tool %s -o posix.yaml -- clang -D SOURCE="\"\"" -D DEST="\"\"" -I "../include/"
  * RUN: %prov -S %t.ll -o %t.prov.ll
  * RUN: %filecheck %s -input-file %t.ll -check-prefix LLCHECK
  * RUN: %filecheck %s -input-file %t.prov.ll -check-prefix PROVCHECK

@@ -32,6 +32,7 @@
 
 #include "IFFactory.hh"
 #include "PosixCallSemantics.hh"
+#include "AnnotationCallSemantics.hh"
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
@@ -65,7 +66,8 @@ private:
   InstrPtr Instr;
   Module& Mod;
   LLVMContext& Ctx;
-  PosixCallSemantics CS;
+  //PosixCallSemantics CS;
+  AnnotationCallSemantics CS;
   IntegerType *i32, *i64;
 };
 

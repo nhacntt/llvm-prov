@@ -3,8 +3,8 @@
 
 #include "CallSemantics.hh"
 #include "AnnotationsHelper.hh"
+#include "DeclarationAnalysis.hh"
 
-#include <llvm/Analysis/DeclarationAnalysis.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/SmallVector.h>
 
@@ -17,8 +17,9 @@ using namespace llvm;
 
 class AnnotationCallSemantics : public prov::CallSemantics{
 	public:
-  		AnnotationCallSemantics()=default;
-		
+  		//AnnotationCallSemantics():InputArgMap(), OutputArgMap(), ExplicitSourceNames(), ExplicitSinkNames(){};
+		AnnotationCallSemantics():AnnotationCallSemantics("posix.yaml"){};
+
   		AnnotationCallSemantics(string Filename);
 
   		SmallVector<Value*, 2> CallOutputs(CallInst*) const override;
